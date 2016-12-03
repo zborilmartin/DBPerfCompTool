@@ -1,0 +1,65 @@
+------------------------------ 
+QUERY PLAN DESCRIPTION: 
+------------------------------
+
+EXPLAIN -- $ID$
+ -- TPC-H/TPC-R Order Priority Checking Query (Q4)
+ -- Functional Query Definition
+ -- Approved February 1998
+ 
+ 
+ select  /*+ label(monitoring_tpch_query_4) */ o_orderpriority, count(*) as order_count from orders where o_orderdate >= date '1996-05-01' and o_orderdate < date '1996-05-01' + interval '3' month and exists ( select * from lineitem where l_orderkey = o_orderkey and l_commitdate < l_receiptdate ) group by o_orderpriority order by o_orderpriority LIMIT 1; -- using 1459869488 as a seed to the RNG
+
+Access Path:
++-SELECT  LIMIT 1 [Cost: 566K, Rows: 1] (PATH ID: 0)
+|  Output Only: 1 tuples
+| +---> GROUPBY HASH (SORT OUTPUT) (LOCAL RESEGMENT GROUPS) [Cost: 566K, Rows: 5] (PATH ID: 2)
+| |      Aggregates: count(*)
+| |      Group By: orders.O_ORDERPRIORITY
+| | +---> JOIN MERGEJOIN(inputs presorted) [Semi] [Cost: 566K, Rows: 900K] (PATH ID: 3)
+| | |      Join Cond: (VAL(1) = orders.O_ORDERKEY)
+| | |      Materialize at Output: orders.O_ORDERPRIORITY
+| | | +-- Outer -> STORAGE ACCESS for orders [Cost: 68K, Rows: 606K] (PATH ID: 4)
+| | | |      Projection: tpch_10g.ORDERS_super
+| | | |      Materialize: orders.O_ORDERKEY
+| | | |      Filter: ((orders.O_ORDERDATE >= '1996-05-01'::date) AND (orders.O_ORDERDATE < '1996-08-01 00:00:00'::timestamp))
+| | | |      Runtime Filter: (SIP1(MergeJoin): orders.O_ORDERKEY)
+| | | +-- Inner -> SELECT [Cost: 483K, Rows: 22M] (PATH ID: 5)
+| | | | +---> STORAGE ACCESS for lineitem [Cost: 483K, Rows: 22M] (PATH ID: 6)
+| | | | |      Projection: tpch_10g.LINEITEM_super
+| | | | |      Materialize: lineitem.L_COMMITDATE, lineitem.L_RECEIPTDATE, lineitem.L_ORDERKEY
+| | | | |      Filter: (lineitem.L_COMMITDATE < lineitem.L_RECEIPTDATE)
+
+
+------------------------------ 
+----------------------------------------------- 
+PLAN: BASE QUERY PLAN (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = "BASE QUERY PLAN\nQuery: EXPLAIN -- $ID$\n -- TPC-H/TPC-R Order Priority Checking Query (Q4)\n -- Functional Query Definition\n -- Approved February 1998\n \n \n select  /*+ label(monitoring_tpch_query_4) */ o_orderpriority, count(*) as order_count from orders where o_orderdate \>= date \'1996-05-01\' and o_orderdate \< date \'1996-05-01\' + interval \'3\' month and exists ( select * from lineitem where l_orderkey = o_orderkey and l_commitdate \< l_receiptdate ) group by o_orderpriority order by o_orderpriority LIMIT 1; -- using 1459869488 as a seed to the RNG\n\nAll Nodes Vector: \n\n  node[0]=v_verticadb_node0001 (initiator) Up\n", labelloc=t, labeljust=l ordering=out]
+0[label = "Root \nOutBlk=[UncTuple(2)]", color = "green", shape = "house"];
+1[label = "NewEENode \nOutBlk=[UncTuple(2)]", color = "green", shape = "box"];
+2[label = "TopK[PIPELINED]\n Sort: (keys = )\nLIMIT: 1\nOffset: 0\nUnc: Char(15)\nUnc: Integer(8)", color = "green", shape = "box"];
+3[label = "ParallelMergeStep: 1 sorted\nCombine\nUnc: Char(15)\nUnc: Integer(8)", color = "green", shape = "box"];
+4[label = "GroupByHash(Sort Groups)(Spill): 1 keys\nAggs:\n  count(*)\nUnc: Char(15)\nUnc: Integer(8)", color = "green", shape = "box"];
+5[label = "StorageUnionStep: ORDERS_super\nLocally Resegment\nUnc: Char(15)\nUnc: Integer(8)", color = "purple", shape = "box"];
+6[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  count(*)\nUnc: Char(15)\nUnc: Integer(8)", color = "brown", shape = "box"];
+7[label = "ExprEval: \n  orders.O_ORDERPRIORITY\n  1\nUnc: Char(15)\nUnc: Integer(8)", color = "brown", shape = "box"];
+8[label = "Join: Merge-Join: \n(tpch_10g.ORDERS x tpch_10g.LINEITEM) using ORDERS_super and subquery (PATH ID: 3)\n[Semi]\n\nUnc: Char(15)\nUnc: Integer(8)", color = "brown", shape = "box"];
+9[label = "ScanStep: ORDERS_super\n((orders.O_ORDERDATE \>= \'1996-05-01\'::date) AND (orders.O_ORDERDATE \< \'1996-08-01 00:00:00\'::timestamp))\nSIP1(MergeJoin): orders.O_ORDERKEY\nO_ORDERKEY\nO_ORDERDATE (not emitted)\nUnc: Integer(8)", color = "brown", shape = "box"];
+10[label = "ExprEval: \n  lineitem.L_ORDERKEY\nUnc: Integer(8)", color = "green", shape = "box"];
+11[label = "StorageMergeStep: LINEITEM_super; 1 sorted\nUnc: Integer(8)\nUnc: Date(8)\nUnc: Date(8)", color = "purple", shape = "box"];
+12[label = "ScanStep: LINEITEM_super\n(lineitem.L_COMMITDATE \< lineitem.L_RECEIPTDATE)\nL_ORDERKEY\nL_COMMITDATE\nL_RECEIPTDATE\nUnc: Integer(8)\nUnc: Date(8)\nUnc: Date(8)", color = "brown", shape = "box"];
+1->0 [label = "V[0] C=2",color = "black",style="bold", arrowtail="inv"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->8 [label = "1",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+}

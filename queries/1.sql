@@ -3,9 +3,6 @@
 -- Functional Query Definition
 -- Approved February 1998
 
-show search_path;
-
-
 select  /*+ label(monitoring_tpch_query_1) */
 	l_returnflag,
 	l_linestatus,

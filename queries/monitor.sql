@@ -23,7 +23,7 @@ WHERE
         AND query NOT LIKE 'select 1'
         AND query NOT LIKE '%search_path%'
         AND eep.counter_name ILIKE 'execution time%'
-        AND query LIKE '%monitoring_tpch_query_%'
+        AND query LIKE '%/*+ label(monitoring_tpch_query_%'
 GROUP BY
         eep.transaction_id, 
         eep.statement_id, 
