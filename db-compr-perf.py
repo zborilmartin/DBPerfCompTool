@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-import pyodbc
+#import pyodbc
 import re
 import os
 import yaml
 import argparse
 import logging
 from sys import exit
+from manageExcel import * 
 
 class DBPerfComp(object):
 	# Method for parsing aguments
@@ -19,12 +20,12 @@ class DBPerfComp(object):
 	        return args
     
 	def __init__(self):
-        	# Connection to Vertica DB
-		self.conn = pyodbc.connect("DSN=vertica")
-		self.conn.autocommit = True
-		# Setting Config file to attribute confFile
+#        	# Connection to Vertica DB
+#		self.conn = pyodbc.connect("DSN=vertica")
+#		self.conn.autocommit = True
+#		# Setting Config file to attribute confFile
 		self.confFile = self.arg_parser().conf_file
-		#conn = pyodbc.connect('DRIVER={Vertica};SERVER=mzb-vertica72-18.na.intgdc.com;PORT=55076;DATABASE=vertica;UID=vertica;PWD=')
+#		#conn = pyodbc.connect('DRIVER={Vertica};SERVER=mzb-vertica72-18.na.intgdc.com;PORT=55076;DATABASE=vertica;UID=vertica;PWD=')
 		
 	# Extracting query from specific file
 	def extract(self,queryName):
@@ -67,17 +68,6 @@ class DBPerfComp(object):
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
 		for row in rows:
-			#print "ROW 0 %s" % row[0]
-			#print "ROW 1 %s" % row[1]
-			#print "ROW 2 %s" % row[2]
-			#print "ROW 3 %s" % row[3]
-			#print "ROW 4 %s" % row[4]
-			#print "ROW 5 %s" % row[5]	
-			#print "ROW 6 %s" % row[6]
-			#print "ROW 7 %s" % row[7]	
-			#print "ROW 8 %s" % row[8]
-
-			#print "........."
 			start = row[8].find('/*+ label(') + 10
 			end = row[8].find(') */')
 			label = row[8][start:end]		
@@ -251,8 +241,13 @@ class DBPerfComp(object):
 				raise Exception('Data not loaded')
 			# Setting variables querise, testname, iteration, schemas
 			queries_unparsed = confData['Conf']['queries']
-			queries_unparsed2 = "".join(queries_unparsed)
-			self.queries = queries_unparsed2.split()
+			if type(queries_unparsed) is int:                            
+                    		self.queries = [str(queries_unparsed)]                
+            		else:                    
+ 	                	queries_unparsed2 = "".join(queries_unparsed)
+			        self.queries = queries_unparsed2.split()
+
+
 	
 	     	        testname_unparsed = confData['Conf']['testName']
 			self.testname = "".join(testname_unparsed)
@@ -262,10 +257,11 @@ class DBPerfComp(object):
 			schemas_unparsed = confData['Conf']['schemas']
 			schemas_unparsed2 = "".join(schemas_unparsed)
 			self.schemas = schemas_unparsed2.split()
+            
 		except IOError as e:
 		    	print "File was not loaded" 
-		    	exit()            
-		    
+		    	exit()  
+	    
 	def main(self):
 		logging.basicConfig(level=logging.INFO)
 		logger = logging.getLogger("DBD_Comp_Perf_Tool")
@@ -281,11 +277,12 @@ class DBPerfComp(object):
 		logger.info('Number of queries: %s' % len(self.queries))	
 		for query in self.queries:
 			logger.info('Query: %s' % query)
-		self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
-		self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
+		#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
+		#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
+        	createExcelFile(self.testname, self.queries)
 	
-	def __del__(self):
-		self.conn.close()
+#	def __del__(self):
+#		self.conn.close()
 
 if __name__ == "__main__":
 	DBPerfComp().main()
