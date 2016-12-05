@@ -46,7 +46,8 @@ def createAVGTable(ws1,column_start):
             
             # Formatting average table - DBD 
         for cellColumn in range(column_start,column_start+5):
-        	ws1.cell(row=9,column=cellColumn).fill=orangeFill
+            if ws1.title == "DBD":
+        	       ws1.cell(row=9,column=cellColumn).fill=orangeFill
 
             
 	       # Items - line
@@ -106,7 +107,8 @@ def createOverview(ws,queries,testname):
 	for col, value in dims.items():
 		ws.column_dimensions[col].width = value    
     
-def addToOverview(ws,new,queries,schema):  
+def addToOverview(wb,ws,new,queries,schema):  
+    	dbd = wb['DBD']
 	for part in range(1,len(queries)+2):
 		for i in range (1,6):
             		row_start = 21 + (int(ws.cell(row=4,column=2).value)-1)*10
@@ -118,8 +120,13 @@ def addToOverview(ws,new,queries,schema):
     
     		        # Description
 	       		ws.cell(row=row_start, column=4, value="Description:")
-			for i in range (0,3):                                
-				ws['{0}'.format(ws.cell(row=row_start+i+1, column=column_one).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=8+i, column=column_one).coordinate)
+			for j in range (0,3):                                
+				ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=8+j, column=column_one).coordinate)
+                
+ 	                if i < 5:
+        	        	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_start+2, column=column_one).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(dbd.cell(row=9, column=column_one).coordinate)], stopIfTrue=True, fill=redFill))
+                		ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_start+2, column=column_one).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(dbd.cell(row=9, column=column_one).coordinate)], stopIfTrue=True, fill=greenFill))                
+
 
 def createProfile(ws1,column_start):
             # Memory used
@@ -197,7 +204,7 @@ def loadDataToExcel(rows,query,schema,testname,queries):
        	    			ws.cell(row=99,column=start_column).value += 1				    
         wb.save('CompareOutput/' + testname + '.xlsx')
     
-def duplicatePattern(schema,testname,queries):
+def duplicatePattern(schema,testname,queries,rows,query):
     wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     ws = wb["Overview"] 
     pattern = wb["Pattern"]    
@@ -205,14 +212,60 @@ def duplicatePattern(schema,testname,queries):
         new = wb.copy_worksheet(pattern)
         new.cell(row=3, column=2, value=schema)
         new.title = schema
-        addToOverview(ws,new,queries,schema)
+        addToOverview(wb,ws,new,queries,schema)
         ws.cell(row=4,column=2).value = int(ws.cell(row=4,column=2).value) + 1 
-        
+		# Formatting average table - green/red - PATTERN
+	for part in range(1,len(queries)+2):
+		#if len(queries) > 1 and part:
+		for i in range(1,5):
+			new.conditional_formatting.add('{0}'.format(new.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=redFill))
+			new.conditional_formatting.add('{0}'.format(new.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=greenFill))
+
+		new.conditional_formatting.add('{0}'.format(new.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill)) 
+                new.conditional_formatting.add('{0}'.format(new.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
+
+		# USED BYTES PROJECTIONS
+		for i in range(1,10):
+			new.conditional_formatting.add('{0}'.format(new.cell(row=14, column=(part-1)*10 + i).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws.cell(row=14, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=redFill))
+			new.conditional_formatting.add('{0}'.format(new.cell(row=14, column=(part-1)*10 + i).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws.cell(row=14, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=greenFill))
+
+
+
+		for i in range (1,5):
+			new['{0}'.format(ws.cell(row=10, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws.cell(row=9, column=(part-1)*10+i).coordinate,new.cell(row=9, column=(part-1)*10+i).coordinate)
+
+		if len(queries) == 1:
+			break
+
+		if len(queries) > 1 and part == 1:
+			continue
+
+		for i in range (1,10):
+			new['{0}'.format(ws.cell(row=15, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws.cell(row=14, column=(part-1)*10+i).coordinate,new.cell(row=14, column=(part-1)*10+i).coordinate)
+            
+    	if len(queries)>1:
+                for i in range(0,len(queries)):
+                        start_column= 10*(i+1) + 1
+                        if new.cell(row=5,column=start_column+1).value == query:
+
+    
     wb.save('CompareOutput/' + testname + '.xlsx')        
 
         
-
-        
+def loadProfilePath(schema,testname,rows,
+	wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
+    	ws = wb[schema]	
+        if len(queries)>1:
+                for i in range(0,len(queries)):
+                        start_column= 10*(i+1) + 1
+                        if ws.cell(row=5,column=start_column+1).value == query:
+				tmp_row = 0
+				tmp_column = 0
+				for row in rows:
+					for item in row:				
+						ws['{0}'.format(ws.cell(row=19+tmp,column=start_column+1).coordinate)]=str(item)
+						tmp_column += 1
+					tmp_row += 1
     
 def createExcelFile(testname,queries):
     	if not os.path.exists('./CompareOutput/' + testname + '.xlsx'):
@@ -331,46 +384,21 @@ def createExcelFile(testname,queries):
 	    
 		# Formatting average table - green/red - PATTERN
 		for part in range(1,len(queries)+2):
-			#if len(queries) > 1 and part:                            
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 1).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 1).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 1).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 1).coordinate)], stopIfTrue=True, fill=greenFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 3).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 3).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 3).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 3).coordinate)], stopIfTrue=True, fill=greenFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 4).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 4).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=9, column=(part-1)*10 + 4).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + 4).coordinate)], stopIfTrue=True, fill=greenFill))
+			#if len(queries) > 1 and part:         
+            		for i in range(1,5):
+                    		pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=redFill))
+                    		pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=greenFill))
+	
 			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
+			pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill))
+			pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
 			
 			# USED BYTES PROJECTIONS
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 1).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 1).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 1).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 1).coordinate)], stopIfTrue=True, fill=greenFill))
+            		for j in range(1,10):
+                    		pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=14, column=(part-1)*10 + j).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + j).coordinate)], stopIfTrue=True, fill=redFill))
+                        	pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=14, column=(part-1)*10 + j).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + j).coordinate)], stopIfTrue=True, fill=greenFill))
 			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 3).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 3).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 3).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 3).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 4).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 4).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 4).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 4).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 5).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 5).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 5).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 5).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 6).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 6).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 6).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 6).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 7).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 7).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 7).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 7).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 8).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 8).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 8).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 8).coordinate)], stopIfTrue=True, fill=greenFill))
-			
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 9).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 9).coordinate)], stopIfTrue=True, fill=redFill))
-			pattern.conditional_formatting.add('{0}'.format(ws1.cell(row=14, column=(part-1)*10 + 9).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + 9).coordinate)], stopIfTrue=True, fill=greenFill))
+
 			
 			for i in range (1,5):                   
 				pattern['{0}'.format(ws1.cell(row=10, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws1.cell(row=9, column=(part-1)*10+i).coordinate,pattern.cell(row=9, column=(part-1)*10+i).coordinate)       

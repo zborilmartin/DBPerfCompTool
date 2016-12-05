@@ -192,8 +192,9 @@ class DBPerfComp(object):
 					query = query.replace("TABLENAME", tablename)
 					cursor.execute(query)
 					cursor.commit()
-                    
-                #duplicatePattern()
+                     
+                duplicatePattern(schema,testname,listQueries,rows,query)
+                
 				
 		    #loadProfileToExcel(listQueries,tablename,schema,testname,output_schema)
 
@@ -290,10 +291,9 @@ class DBPerfComp(object):
         	rows = ['1','1','1','1','1','1','1']
         	loadDataToExcel(rows,"1","DBD","test",self.queries)
             	loadDataToExcel(rows,"4","DBD","test",self.queries)
-            	loadDataToExcel(rows,"1","DBD","test",self.queries)
-                
+            	loadDataToExcel(rows,"1","DBD","test",self.queries)                
                 duplicatePattern("DBD",self.testname,self.queries)
-                duplicatePattern("new",self.testname,self.queries)
+               
                 loadDataToExcel(rows,"1","new","test",self.queries)
             	#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
 
