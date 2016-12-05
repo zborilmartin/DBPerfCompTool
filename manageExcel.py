@@ -190,18 +190,27 @@ def createProfile(ws1,column_start):
 def loadDataToExcel(rows,query,schema,testname,queries):
         wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
         ws = wb[schema]
-        start_column = 1
-        for i in range (0,7):
-	           ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+i).coordinate)] = int(rows[i])
-        ws.cell(row=99,column=start_column).value += 1
-	
-    	if len(queries)>1:
-            	for i in range(0,len(queries)):
-                        start_column= 10*(i+1) + 1
-                   	if ws.cell(row=5,column=start_column+1).value == query:
-               			for j in range (0,7):
-	           			ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+j).coordinate)] = int(rows[j])
-       	    			ws.cell(row=99,column=start_column).value += 1				    
+	for row in rows:
+		print "ROW"
+		print row
+        	start_column = 1
+		for i in range (1,9):
+			if i in [4,5,6,7]:
+				ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
+			else:   
+				ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]
+		ws.cell(row=99,column=start_column).value += 1
+		
+		if len(queries)>1:
+			for i in range(0,len(queries)):
+				start_column= 10*(i+1) + 1
+				if ws.cell(row=5,column=start_column+1).value == query:
+					for j in range (1,9):
+						if i in [4,5,6,7]:
+                                			ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+j).coordinate)] = int(row[j])
+                        			else:
+							ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+j).coordinate)] = row[j]
+					ws.cell(row=99,column=start_column).value += 1				    
         wb.save('CompareOutput/' + testname + '.xlsx')
     
 def duplicatePattern(schema,testname,queries,rows,query):
@@ -243,30 +252,27 @@ def duplicatePattern(schema,testname,queries,rows,query):
 		for i in range (1,10):
 			new['{0}'.format(ws.cell(row=15, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws.cell(row=14, column=(part-1)*10+i).coordinate,new.cell(row=14, column=(part-1)*10+i).coordinate)
             
-    	if len(queries)>1:
-                for i in range(0,len(queries)):
-                        start_column= 10*(i+1) + 1
-                        if new.cell(row=5,column=start_column+1).value == query:
-
     
-    wb.save('CompareOutput/' + testname + '.xlsx')        
+	wb.save('CompareOutput/' + testname + '.xlsx')        
 
         
-def loadProfilePath(schema,testname,rows,
+def loadProfilePath(schema,testname,rows,queries,query):
 	wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     	ws = wb[schema]	
-        if len(queries)>1:
-                for i in range(0,len(queries)):
-                        start_column= 10*(i+1) + 1
-                        if ws.cell(row=5,column=start_column+1).value == query:
-				tmp_row = 0
+        for i in range(0,len(queries)):
+        	start_column= 10*(i+1) + 1
+                if ws.cell(row=5,column=start_column+1).value == query:
+			tmp_row = 0
+			for row in rows:
 				tmp_column = 0
-				for row in rows:
-					for item in row:				
-						ws['{0}'.format(ws.cell(row=19+tmp,column=start_column+1).coordinate)]=str(item)
-						tmp_column += 1
-					tmp_row += 1
-    
+				for item in row:
+					print item				
+					#ws['{0}'.format(ws.cell(row=19+tmp_row,column=start_column+tmp_column).coordinate)]=str(item)
+					ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
+					tmp_column += 1
+				tmp_row += 1
+
+
 def createExcelFile(testname,queries):
     	if not os.path.exists('./CompareOutput/' + testname + '.xlsx'):
 		# Create workbook and sheets

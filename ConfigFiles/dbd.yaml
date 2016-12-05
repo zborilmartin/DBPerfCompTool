@@ -2,4 +2,4 @@ Conf:
     testName: test
     queries: 1 4
     schemas: tpch_10g
-    iteration: 1
+    iteration: 10

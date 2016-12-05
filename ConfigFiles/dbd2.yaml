@@ -1,5 +1,5 @@
 Conf: 
-    testName: my
-    queries: 2
+    testName: my2
+    queries: 2 4 8
     schemas: tpch_10g
     iteration: 2

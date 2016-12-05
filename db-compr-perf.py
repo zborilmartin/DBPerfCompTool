@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#import pyodbc
+import pyodbc
 import re
 import os
 import yaml
@@ -21,9 +21,9 @@ class DBPerfComp(object):
     
 	def __init__(self):
 #        	# Connection to Vertica DB
-#		self.conn = pyodbc.connect("DSN=vertica")
-#		self.conn.autocommit = True
-#		# Setting Config file to attribute confFile
+		self.conn = pyodbc.connect("DSN=vertica")
+		self.conn.autocommit = True
+		# Setting Config file to attribute confFile
 		self.confFile = self.arg_parser().conf_file
 #		#conn = pyodbc.connect('DRIVER={Vertica};SERVER=mzb-vertica72-18.na.intgdc.com;PORT=55076;DATABASE=vertica;UID=vertica;PWD=')
 		
@@ -59,7 +59,7 @@ class DBPerfComp(object):
 
             
 	# Method for sending data into the database
-	def monitor(self, length, tablename, testname):
+	def monitor(self, length, tablename, testname,schema,query,listQueries):
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
@@ -72,11 +72,14 @@ class DBPerfComp(object):
 			end = row[8].find(') */')
 			label = row[8][start:end]		
 			row[8] = label
-            		
+            	loadDataToExcel(rows,query,schema,testname,listQueries)
+		
+
+		for row in rows:	
 			query = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}')" % tablename
 			query = query.format(*row)
 			
-			self.printInfo(row,tablename,testname)
+			self.printInfo(row,tablename,schema)
 			
 			cursor.execute(query)
 			cursor.commit() 
@@ -93,9 +96,8 @@ class DBPerfComp(object):
                                         cursor.execute(statement)
                                         # Loading data from database
                                         rows = cursor.fetchall()
-                                        loadDataToExcel(rows,query,schema,testname)                                            
                                         # Monitoring data    
-                                self.monitor(len(listQueries), tablename, schema)
+                                self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema):
 		for query in listQueries:
@@ -193,8 +195,8 @@ class DBPerfComp(object):
 					cursor.execute(query)
 					cursor.commit()
                      
-                duplicatePattern(schema,testname,listQueries,rows,query)
-                
+                		duplicatePattern(schema,testname,listQueries,rows,query)
+                		loadProfilePath(schema,testname,rows,listQueries,query)
 				
 		    #loadProfileToExcel(listQueries,tablename,schema,testname,output_schema)
 
@@ -287,20 +289,20 @@ class DBPerfComp(object):
 		for query in self.queries:
 			logger.info('Query: %s' % query)
             	createExcelFile(self.testname, self.queries)
-		#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
-        	rows = ['1','1','1','1','1','1','1']
-        	loadDataToExcel(rows,"1","DBD","test",self.queries)
-            	loadDataToExcel(rows,"4","DBD","test",self.queries)
-            	loadDataToExcel(rows,"1","DBD","test",self.queries)                
-                duplicatePattern("DBD",self.testname,self.queries)
+		self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
+        	#rows = [['2','1','1','1','1','1','1','1','1'],['2','1','1','1','1','1','1','1','1'],['1','2','1','1','1','1','1','1','1']]
+        	#loadDataToExcel(rows,"1","DBD","test",self.queries)
+            	#loadDataToExcel(rows,"4","DBD","test",self.queries)
+            	#loadDataToExcel(rows,"1","DBD","test",self.queries)                
+                #duplicatePattern("DBD",self.testname,self.queries)
                
-                loadDataToExcel(rows,"1","new","test",self.queries)
-            	#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
+                #ladDataToExcel(rows,"1","new","test",self.queries)
+           	self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
 
         	
 	
-#	def __del__(self):
-#		self.conn.close()
+	def __del__(self):
+		self.conn.close()
 
 if __name__ == "__main__":
 	DBPerfComp().main()
