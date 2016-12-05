@@ -82,7 +82,7 @@ class DBPerfComp(object):
 			cursor.commit() 
 		cursor.close()
     
-	def executeTest(self,iteration,listQueries,cursor,tablename,schema):
+	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname):
 		# For each iteration which is given in Config file
                         for i in range(0,iteration):
                                 # For each query which is given in Config file
@@ -93,6 +93,7 @@ class DBPerfComp(object):
                                         cursor.execute(statement)
                                         # Loading data from database
                                         rows = cursor.fetchall()
+                                        loadDataToExcel(rows,query,schema,testname)                                            
                                         # Monitoring data    
                                 self.monitor(len(listQueries), tablename, schema)
 
@@ -137,61 +138,64 @@ class DBPerfComp(object):
                                 	explainVerboseFile.close()
 			
 				# Loading query for creating table in schema above
-			create_table_statement = self.extract('monitor_profile_create')
+				create_table_statement = self.extract('monitor_profile_create')
 
-			# Setting table name which will be in creating query
-			tablename = '{0}.{1}_{2}_{3}'.format(output_schema,testname,schema,query)
-				    
-			# In creat-table query is: TABLENAME
-			# This text is replaced whith name that we want
-			create_table_statement = create_table_statement.replace("TABLENAME", tablename)
-				    
-			# print create_table_statement
-				    
-			# Executing Create-table query
-			cursor.execute(create_table_statement)	
-
-
-
-			statement = self.extract(query)
-			statement_profile = "PROFILE " + statement
-			# Executing PROFILE QUERY
-			cursor.execute(statement_profile)		
-			rows = cursor.fetchall()	
-			cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
-
-			# Loading data from database
-			rows = cursor.fetchall()
-
-			TRANS_ID = rows[0][0]
-			STATEM_ID = rows[0][1]
-
-			# Loading query for profile output
-			monitor_statement_statement = self.extract('monitor_profile')
-			
-			 # In creat-table query is: TRANSACTION_NUMBER,STATEMENT_NUMBER
-			 # This text is replaced with name that we want
-			monitor_statement_statement = monitor_statement_statement.replace("TRANSACTION_NUMBER", str(TRANS_ID))
-			monitor_statement_statement = monitor_statement_statement.replace("STATEMENT_NUMBER", str(STATEM_ID))
-			monitor_statement_statement = monitor_statement_statement.replace("running_time", "running_time::VARCHAR")
-			monitor_statement_statement = monitor_statement_statement.replace("memory_allocated_bytes", "memory_allocated_bytes::VARCHAR")
-			monitor_statement_statement = monitor_statement_statement.replace("read_from_disk_bytes", "read_from_disk_bytes::VARCHAR")
+				# Setting table name which will be in creating query
+				tablename = '{0}.{1}_{2}_{3}'.format(output_schema,testname,schema,query)
+					    
+				# In creat-table query is: TABLENAME
+				# This text is replaced whith name that we want
+				create_table_statement = create_table_statement.replace("TABLENAME", tablename)
+					    
+				# print create_table_statement
+					    
+				# Executing Create-table query
+				cursor.execute(create_table_statement)	
 
 
-			# Executing MONITOR PROFILE QUERY
-			cursor.execute(monitor_statement_statement)
 
-			# Loading data from database
-			rows = cursor.fetchall()
+				statement = self.extract(query)
+				statement_profile = "PROFILE " + statement
+				# Executing PROFILE QUERY
+				cursor.execute(statement_profile)		
+				rows = cursor.fetchall()	
+				cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
 
-			for row in rows:
-				query = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
-				row[3] = row[3].replace("'", "/")
-				query = query.format(*row)
-				query = query.replace("TABLENAME", tablename)
-        	                cursor.execute(query)
-                	        cursor.commit()
+				# Loading data from database
+				rows = cursor.fetchall()
 
+				TRANS_ID = rows[0][0]
+				STATEM_ID = rows[0][1]
+
+				# Loading query for profile output
+				monitor_statement_statement = self.extract('monitor_profile')
+				
+				 # In creat-table query is: TRANSACTION_NUMBER,STATEMENT_NUMBER
+				 # This text is replaced with name that we want
+				monitor_statement_statement = monitor_statement_statement.replace("TRANSACTION_NUMBER", str(TRANS_ID))
+				monitor_statement_statement = monitor_statement_statement.replace("STATEMENT_NUMBER", str(STATEM_ID))
+				monitor_statement_statement = monitor_statement_statement.replace("running_time", "running_time::VARCHAR")
+				monitor_statement_statement = monitor_statement_statement.replace("memory_allocated_bytes", "memory_allocated_bytes::VARCHAR")
+				monitor_statement_statement = monitor_statement_statement.replace("read_from_disk_bytes", "read_from_disk_bytes::VARCHAR")
+
+
+				# Executing MONITOR PROFILE QUERY
+				cursor.execute(monitor_statement_statement)
+
+				# Loading data from database
+				rows = cursor.fetchall()
+
+				for row in rows:
+					query = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
+					row[3] = row[3].replace("'", "/")
+					query = query.format(*row)
+					query = query.replace("TABLENAME", tablename)
+					cursor.execute(query)
+					cursor.commit()
+                    
+                #duplicatePattern()
+				
+		    #loadProfileToExcel(listQueries,tablename,schema,testname,output_schema)
 
 	# Method for running specific Query 
 	def runQuery(self,listQueries,listSchemas,iteration,testname,output_schema):
@@ -224,11 +228,15 @@ class DBPerfComp(object):
 			cursor.execute(create_table_statement)		
 	
 			if output_schema == "monitoring_output":
-				self.executeTest(iteration,listQueries,cursor,tablename,schema)
+				self.executeTest(iteration,listQueries,cursor,tablename,schema,testname)
 			
 			if output_schema == "monitoring_profiles":
 				self.executeExplainProfile(listQueries,cursor,tablename,schema,testname,output_schema)
                 cursor.close()
+                
+                
+                
+                
     	def parserYAML(self, file):
         	try:
 			# Opening file
@@ -277,9 +285,19 @@ class DBPerfComp(object):
 		logger.info('Number of queries: %s' % len(self.queries))	
 		for query in self.queries:
 			logger.info('Query: %s' % query)
-		#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
+            	createExcelFile(self.testname, self.queries)
 		#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
-        	createExcelFile(self.testname, self.queries)
+        	rows = ['1','1','1','1','1','1','1']
+        	loadDataToExcel(rows,"1","DBD","test",self.queries)
+            	loadDataToExcel(rows,"4","DBD","test",self.queries)
+            	loadDataToExcel(rows,"1","DBD","test",self.queries)
+                
+                duplicatePattern("DBD",self.testname,self.queries)
+                duplicatePattern("new",self.testname,self.queries)
+                loadDataToExcel(rows,"1","new","test",self.queries)
+            	#self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
+
+        	
 	
 #	def __del__(self):
 #		self.conn.close()
