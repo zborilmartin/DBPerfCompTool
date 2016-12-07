@@ -9,6 +9,7 @@ from sys import exit
 from manageExcel import * 
 
 class DBPerfComp(object):
+    
 	# Method for parsing aguments
 	# Arguments:
 	#   - Config file
@@ -20,12 +21,12 @@ class DBPerfComp(object):
 	        return args
     
 	def __init__(self):
-#        	# Connection to Vertica DB
+        	# Connection to Vertica DB
 		self.conn = pyodbc.connect("DSN=vertica")
 		self.conn.autocommit = True
 		# Setting Config file to attribute confFile
 		self.confFile = self.arg_parser().conf_file
-#		#conn = pyodbc.connect('DRIVER={Vertica};SERVER=mzb-vertica72-18.na.intgdc.com;PORT=55076;DATABASE=vertica;UID=vertica;PWD=')
+		#conn = pyodbc.connect('DRIVER={Vertica};SERVER=mzb-vertica72-18.na.intgdc.com;PORT=55076;DATABASE=vertica;UID=vertica;PWD=')
 		
 	# Extracting query from specific file
 	def extract(self,queryName):
@@ -59,6 +60,7 @@ class DBPerfComp(object):
 
             
 	# Method for sending data into the database
+    	# calling method loadDataToExcel - loading data from monitoring into excel file
 	def monitor(self, length, tablename, testname,schema,query,listQueries):
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor')
@@ -67,14 +69,18 @@ class DBPerfComp(object):
 		cursor = self.conn.cursor()
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
+        
+        	# One column is whole query >> parsing only label from all rows
 		for row in rows:
 			start = row[8].find('/*+ label(') + 10
 			end = row[8].find(') */')
 			label = row[8][start:end]		
 			row[8] = label
+            
+        	# loading data into the excel file
             	loadDataToExcel(rows,query,schema,testname,listQueries)
 		
-
+        	# sending data into the database
 		for row in rows:	
 			query = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}')" % tablename
 			query = query.format(*row)
@@ -87,25 +93,30 @@ class DBPerfComp(object):
     
 	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname):
 		# For each iteration which is given in Config file
-                        for i in range(0,iteration):
-                                # For each query which is given in Config file
-                                for query in listQueries:
-                                        # Loading query from folder
-                                        statement = self.extract(query)
-                                        # Executing given query
-                                        cursor.execute(statement)
-                                        # Loading data from database
-                                        rows = cursor.fetchall()
-                                        # Monitoring data    
-                                self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
+		for i in range(0,iteration):
+			# For each query which is given in Config file
+			for query in listQueries:
+				# Loading query from folder
+				statement = self.extract(query)
+				# Executing given query
+				cursor.execute(statement)
+				# Loading data from database
+				rows = cursor.fetchall()
+				# Monitoring data    
+			self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema):
 		for query in listQueries:
+            		# Setting path of the output for Explain
 			fileExplain = './ExplainProfile/{0}/Explain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
+
+            		# The rest of this method is executed only if the statement is true
+            		# Important assumption: if there is no Explain file, there is also no Explain Verbose file, Query Profile Plan in the database and EXCEL (XLSX) sheet in the Excel file (and vice versa)
 			if not os.path.exists(fileExplain):
 				# Loading query from folder
 				statement = self.extract(query)
-
+                
+                		# Adding prefixes to query
 				statement_profile = "PROFILE " + statement
 				statement_explain = "EXPLAIN " + statement
 				statement_explain_verbose = "EXPLAIN VERBOSE " + statement
@@ -113,13 +124,14 @@ class DBPerfComp(object):
 				if not os.path.exists('./ExplainProfile'):
     					os.makedirs('./ExplainProfile')
 				if not os.path.exists('./ExplainProfile/%s' % testname):
-                                	os.makedirs('./ExplainProfile/%s' % testname)	
+                        		os.makedirs('./ExplainProfile/%s' % testname)	
 
 				# Executing PROFILE QUERY
 				cursor.execute(statement_explain)
 				# Loading data from database
 				rows = cursor.fetchall()
 				
+                		# Writing Explain into file
 				with open(fileExplain, "w+") as explainFile:
 					for row in rows:
 						explainFile.write(row[0]+'\n')
@@ -134,6 +146,7 @@ class DBPerfComp(object):
 					# Loading data from database
 					rows = cursor.fetchall()
 
+                                    # Writing into Explain Verbose file
                                 	with open(fileVerboseExplain, "w+") as explainVerboseFile:
                                         	for row in rows:
                                                 	explainVerboseFile.write(row[0]+'\n')
@@ -149,23 +162,17 @@ class DBPerfComp(object):
 				# This text is replaced whith name that we want
 				create_table_statement = create_table_statement.replace("TABLENAME", tablename)
 					    
-				# print create_table_statement
-					    
 				# Executing Create-table query
 				cursor.execute(create_table_statement)	
-
-
-
-				statement = self.extract(query)
-				statement_profile = "PROFILE " + statement
+				
 				# Executing PROFILE QUERY
 				cursor.execute(statement_profile)		
-				rows = cursor.fetchall()	
 				cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
 
 				# Loading data from database
 				rows = cursor.fetchall()
 
+                		# transaction_id and statement_id of executed profile query
 				TRANS_ID = rows[0][0]
 				STATEM_ID = rows[0][1]
 
@@ -187,6 +194,7 @@ class DBPerfComp(object):
 				# Loading data from database
 				rows = cursor.fetchall()
 
+                		# Sending Query Profil Plan to datbase
 				for row in rows:
 					query = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
 					row[3] = row[3].replace("'", "/")
@@ -194,11 +202,10 @@ class DBPerfComp(object):
 					query = query.replace("TABLENAME", tablename)
 					cursor.execute(query)
 					cursor.commit()
-                     
+                     		# Creating new sheet in specific XLSX file 
                 		duplicatePattern(schema,testname,listQueries,rows,query)
-                		loadProfilePath(schema,testname,rows,listQueries,query)
-				
-		    #loadProfileToExcel(listQueries,tablename,schema,testname,output_schema)
+                        	# Loading profile path to Excel
+                		loadProfilePath(schema,testname,rows,listQueries,query)		    
 
 	# Method for running specific Query 
 	def runQuery(self,listQueries,listSchemas,iteration,testname,output_schema):
@@ -237,9 +244,6 @@ class DBPerfComp(object):
 				self.executeExplainProfile(listQueries,cursor,tablename,schema,testname,output_schema)
                 cursor.close()
                 
-                
-                
-                
     	def parserYAML(self, file):
         	try:
 			# Opening file
@@ -257,8 +261,6 @@ class DBPerfComp(object):
             		else:                    
  	                	queries_unparsed2 = "".join(queries_unparsed)
 			        self.queries = queries_unparsed2.split()
-
-
 	
 	     	        testname_unparsed = confData['Conf']['testName']
 			self.testname = "".join(testname_unparsed)
@@ -299,8 +301,6 @@ class DBPerfComp(object):
                 #ladDataToExcel(rows,"1","new","test",self.queries)
            	self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
 
-        	
-	
 	def __del__(self):
 		self.conn.close()
 
