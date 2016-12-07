@@ -103,7 +103,7 @@ class DBPerfComp(object):
 				# Loading data from database
 				rows = cursor.fetchall()
 				# Monitoring data    
-			self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
+				self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema):
 		for query in listQueries:

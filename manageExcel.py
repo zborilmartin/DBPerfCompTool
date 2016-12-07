@@ -33,7 +33,7 @@ def formatRedGreenFill(ws,dbd,row_comparing,column_comparing,row_to_compare,colu
 # Method for setting deferences on two metrics        
 # Difference is situated one cell under comparing metrics
 def formatDifference(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare):
-        ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD!{0}-{1}".format(dbd.cell(row=row_to_compare, column= ).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
+        ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD!{0}-{1}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
 
 # Method for setting function AVERAGE for each query and COUNT of queries
 def createAVGandCOUNT(ws1,column_start):
@@ -113,10 +113,10 @@ def createOverview(ws,queries,testname):
                 for row_one in range (8,10):                                
                         ws['{0}'.format(ws.cell(row=row_one+4, column=column_one).coordinate)] = "=DBD!{0}".format(ws.cell(row=row_one, column=column_one).coordinate)
                         if row_one == 8:
-                        	   ws1.cell(row=row_one+4,column=column_one).fill=blueFill
-         	                   ws1.cell(row=row_one+4,column=column_one).font=bold
+                        	   ws.cell(row=row_one+4,column=column_one).fill=blueFill
+         	                   ws.cell(row=row_one+4,column=column_one).font=bold
                         if row_one == 9:
-                        	   ws1.cell(row=row_one+4,column=column_one).fill=orangeFill
+                        	   ws.cell(row=row_one+4,column=column_one).fill=orangeFill
     
 	# Width of cells    
 	dims = {}
@@ -147,15 +147,32 @@ def addToOverview(wb,ws,new,queries,schema):
             		# Copying data
 			for j in range (0,3):
 				ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=8+j, column=column_one).coordinate)
-                if j == 0:
-                        
-                        ws1.cell(row=row_start+j+1,column=column_one).fill=blueFill
-         	            ws1.cell(row=row_start+j+1,column=column_one).font=bold
-                if j == 1:
-                        # Formatting - green/red 
-                        formatRedGreenFill(ws,dbd,row_start+j+1,column_one,8+j,column_one)
-                
-                    	# Formatting - green/red 
+				if j == 0:
+					ws.cell(row=row_start+j+1,column=column_one).fill=blueFill
+					ws.cell(row=row_start+j+1,column=column_one).font=bold
+				if j == 1:
+					# Formatting - green/red 
+					formatRedGreenFill(ws,dbd,row_start+j+1,column_one,8+j,column_one)
+				
+
+		# Formatting average table - green/red - in Pattern sheet
+#		for i in range(1,5):
+#			formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),14,((part-1)*10 + i))
+
+#		for i in range (1,5):
+#			formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
+
+#		if len(queries) == 1:
+#			break
+
+#		if len(queries) > 1 and part == 1:
+#			continue
+
+		# USED BYTES PROJECTIONS
+#		for j in range(1,10):
+#			formatRedGreenFill(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))
+#			formatDifference(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))       
+		# Formatting - green/red 
  	                #if i < 5:
                      #   	formatRedGreenFill(ws,dbd,(row_start+2),(column_one),(row_start+2),column_one)
         	        	#ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_start+2, column=column_one).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(dbd.cell(row=9, column=column_one).coordinate)], stopIfTrue=True, fill=redFill))
@@ -189,33 +206,6 @@ def createProfile(ws1,column_start):
                 ws1.cell(row=14,column=column_start+i).fill=greyFill
                 i += 1
 
-#    	ws1.cell(row=13,column=column_start, value="Customer:")
-#        ws1.cell(row=13,column=column_start).fill=lightblueFill
-#        ws1.cell(row=14,column=column_start).fill=greyFill
-#    	ws1.cell(row=13,column=column_start+1, value="Lineitem:")
-#        ws1.cell(row=13,column=column_start+1).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+1).fill=greyFill      
-#    	ws1.cell(row=13,column=column_start+2, value="Nation:")
-#        ws1.cell(row=13,column=column_start+2).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+2).fill=greyFill    
-#    	ws1.cell(row=13,column=column_start+3, value="Orders:")
-#        ws1.cell(row=13,column=column_start+3).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+3).fill=greyFill    
-#    	ws1.cell(row=13,column=column_start+4, value="Part:")
-#        ws1.cell(row=13,column=column_start+4).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+4).fill=greyFill    
-#    	ws1.cell(row=13,column=column_start+5, value="Partsupp:")
-#        ws1.cell(row=13,column=column_start+5).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+5).fill=greyFill    
-#    	ws1.cell(row=13,column=column_start+6, value="Region:")
-#        ws1.cell(row=13,column=column_start+6).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+6).fill=greyFill    
-#    	ws1.cell(row=13,column=column_start+7, value="Supplier:")
-#        ws1.cell(row=13,column=column_start+7).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+7).fill=greyFill            
-#        ws1.cell(row=13,column=column_start+8, value="SUM:")
-#        ws1.cell(row=13,column=column_start+8).fill=lightblueFill    
-#        ws1.cell(row=14,column=column_start+8).fill=greyFill 
         ws1.cell(row=13,column=column_start+8).font=bold
         ws1['{0}'.format(ws1.cell(row=14, column=column_start+8).coordinate)] = "=SUM({0}:{1})".format(ws1.cell(row=14, column=column_start).coordinate,ws1.cell(row=14, column=column_start+7).coordinate)
 
@@ -238,71 +228,49 @@ def loadDataToExcel(rows,query,schema,testname,queries):
             	#8 columns to store
             	loadDataToExcelToParticularTable(row,ws,start_column)
         	## increasing number of queries
-		#ws.cell(row=99,column=start_column).value += 1
+		ws.cell(row=99,column=start_column).value += 1
 		
         	# If there is more than 1 query, data are stored also in particular query table
 		if len(queries)>1:
-			for i in range(0,len(queries)):
-				start_column= 10*(i+1) + 1
-				#if ws.cell(row=5,column=start_column+1).value == query:
-                if str(ws['{0}'.format(ws.cell(row=5,column=start_column+1).coordinate)]) == str(query):
-                    	loadDataToExcelToParticularTable(row,ws,start_column)
-					#for j in range (1,9):
-					#	if i in [4,5,6,7]:
-                    #            			ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+j).coordinate)] = int(row[j])
-                    #    			else:
-					#		ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+j).coordinate)] = row[j]
-					#ws.cell(row=99,column=start_column).value += 1				    
+	                index = queries.index(query)
+			start_column_query= 10*(index+1) + 1
+			loadDataToExcelToParticularTable(row,ws,start_column_query)
+			ws.cell(row=99,column=start_column_query).value += 1				    
         wb.save('CompareOutput/' + testname + '.xlsx')
 
 # Method for creating new sheer according to new schema
 # Particular step: duplicate Pattern sheet and fill Schema name
 def duplicatePattern(schema,testname,queries,rows,query):
     wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
-    ws = wb["Overview"] 
+    ws = wb["DBD"]
+    overview = wb["Overview"] 
     pattern = wb["Pattern"]    
     # Creating new sheet
     if schema not in wb.sheetnames:
         new = wb.copy_worksheet(pattern)
         new.cell(row=3, column=2, value=schema)
         new.title = schema
-        addToOverview(wb,ws,new,queries,schema)
-        ws.cell(row=4,column=2).value = int(ws.cell(row=4,column=2).value) + 1 
-        
-	# Formatting average table - green/red - PATTERN
+        addToOverview(wb,overview,new,queries,schema)
+        overview.cell(row=4,column=2).value = int(overview.cell(row=4,column=2).value) + 1 
+
 	for part in range(1,len(queries)+2):
-		#if len(queries) > 1 and part:
 		for i in range(1,5):
-            		formatRedGreenFill(new,ws,9,((part-1)*10 + i),9,((part-1)*10 + i))
-			#new.conditional_formatting.add('{0}'.format(new.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=redFill))
-			#new.conditional_formatting.add('{0}'.format(new.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=greenFill))
+			formatRedGreenFill(new,ws,9,((part-1)*10 + i),14,((part-1)*10 + i))
 
-            	formatRedGreenFill(new,ws,11,((part-1)*10 + 2),11,((part-1)*10 + 2))
-#		new.conditional_formatting.add('{0}'.format(new.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill)) 
-#                new.conditional_formatting.add('{0}'.format(new.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
-
-		# Formating sizes of projections
-		for i in range(1,10):
-            		formatRedGreenFill(new,ws,14,((part-1)*10 + i),14,((part-1)*10 + i))
-			#new.conditional_formatting.add('{0}'.format(new.cell(row=14, column=(part-1)*10 + i).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws.cell(row=14, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=redFill))
-			#new.conditional_formatting.add('{0}'.format(new.cell(row=14, column=(part-1)*10 + i).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws.cell(row=14, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=greenFill))
-
-       		 # Differences in AVG values - schema AVG table with DBD AVG table
 		for i in range (1,5):
-            		formatDifference(new,ws,9,((part-1)*10+i),9,((part-1)*10+i))
-			#new['{0}'.format(ws.cell(row=10, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws.cell(row=9, column=(part-1)*10+i).coordinate,new.cell(row=9, column=(part-1)*10+i).coordinate)
+			formatDifference(new,ws,9,((part-1)*10+i),9,((part-1)*10+i))
 
 		if len(queries) == 1:
 			break
-            
+
 		if len(queries) > 1 and part == 1:
 			continue
 
-            	# Differences in sizes - schema AVG table with DBD AVG table
-		for i in range (1,10):
-            		formatDifference(new,ws,14,((part-1)*10+i),14,((part-1)*10+i))
-			#new['{0}'.format(ws.cell(row=15, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws.cell(row=14, column=(part-1)*10+i).coordinate,new.cell(row=14, column=(part-1)*10+i).coordinate)
-            
+		# USED BYTES PROJECTIONS
+		for j in range(1,10):
+			formatRedGreenFill(new,ws,14,((part-1)*10+j),14,((part-1)*10+j))
+			formatDifference(new,ws,14,((part-1)*10+j),14,((part-1)*10+j))	
+
 	wb.save('CompareOutput/' + testname + '.xlsx')        
 
 # Method for loading Query Profile Path into the excel file        
@@ -315,7 +283,7 @@ def loadProfilePath(schema,testname,rows,queries,query):
             		start_column= 1
             	if len(queries) > 1 and i == 1:
                 	continue
-            	if part > 1:                
+            	if i > 1:                
                 	start_column= 10*(i+1) + 1        	
                 	#if ws.cell(row=5,column=start_column+1).value == query:
                 if str(ws['{0}'.format(ws.cell(row=5,column=start_column+1).coordinate)]) == str(query):
@@ -329,72 +297,55 @@ def loadProfilePath(schema,testname,rows,queries,query):
 					ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
 					tmp_column += 1
 				tmp_row += 1
-            
-def formatQueryProfilePlanParticularRule(ws1,textRule,colorMethod)                
-		dxf = DifferentialStyle(fill=colorMethod)
-		rule = Rule(type="containsText", operator="containsText", text=textRule, dxf=dxf)
-		rule.formula = ['NOT(ISERROR(SEARCH('+textRule+',A19)))']
-		ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-                
-# Formatting Query Profile Plan part of Excel file - colors                
-def formatQueryProfilePlan(ws1):
-        	# Formating Query Profile Plan part
-        
-        formatQueryProfilePlanParticularRule(ws1,"> JOIN",yellowFill)
-        formatQueryProfilePlanParticularRule(ws1,"Filter",lightblueFill)
-        formatQueryProfilePlanParticularRule(ws1,"Join Cond",orangeFill)
-        formatQueryProfilePlanParticularRule(ws1,"Projection:",pinkFill)
-        formatQueryProfilePlanParticularRule(ws1,"SELECT",lightgreenFill)
-        formatQueryProfilePlanParticularRule(ws1,"SORT [",darkredFill)
-        formatQueryProfilePlanParticularRule(ws1,"> GROUPBY",redFill)
-        formatQueryProfilePlanParticularRule(ws1,"Outer -> STORAGE",blueFill)
-        formatQueryProfilePlanParticularRule(ws1,"Inner -> STORAGE",greenFill)                                                                                                                                      
-		#dxf = DifferentialStyle(fill=yellowFill)
-		#rule = Rule(type="containsText", operator="containsText", text="> JOIN", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("> JOIN",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=lightblueFill)
-		#rule = Rule(type="containsText", operator="containsText", text="Filter", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("Filter",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)       
-		
-		#dxf = DifferentialStyle(fill=orangeFill)
-		#rule = Rule(type="containsText", operator="containsText", text="Join Cond", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("Join Cond",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=pinkFill)
-		#rule = Rule(type="containsText", operator="containsText", text="Projection:", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("Projection:",A16)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=lightgreenFill)
-		#rule = Rule(type="containsText", operator="containsText", text="SELECT", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("SELECT",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=darkredFill)
-		#rule = Rule(type="containsText", operator="containsText", text="SORT [", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("SORT [",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=redFill)
-		#rule = Rule(type="containsText", operator="containsText", text="> GROUPBY", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("> GROUPBY",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=blueFill)
-		#rule = Rule(type="containsText", operator="containsText", text="Outer -> STORAGE", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("Outer -> STORAGE",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		
-		#dxf = DifferentialStyle(fill=greenFill)
-		#rule = Rule(type="containsText", operator="containsText", text="Inner -> STORAGE", dxf=dxf)
-		#rule.formula = ['NOT(ISERROR(SEARCH("Inner -> STORAGE",A19)))']
-		#ws1.conditional_formatting.add('A19:ZZ99', rule)
-		# end 	
+         
+def formatQueryProfilePlan(ws1):  
+	dxf = DifferentialStyle(fill=yellowFill)
+	rule = Rule(type="containsText", operator="containsText", text="> JOIN", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("> JOIN",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+
+	dxf = DifferentialStyle(fill=lightblueFill)
+	rule = Rule(type="containsText", operator="containsText", text="Filter", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("Filter",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)       
+	
+	dxf = DifferentialStyle(fill=orangeFill)
+	rule = Rule(type="containsText", operator="containsText", text="Join Cond", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("Join Cond",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	
+	dxf = DifferentialStyle(fill=pinkFill)
+	rule = Rule(type="containsText", operator="containsText", text="Projection:", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("Projection:",A16)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	
+	dxf = DifferentialStyle(fill=lightgreenFill)
+	rule = Rule(type="containsText", operator="containsText", text="SELECT", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("SELECT",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	
+	dxf = DifferentialStyle(fill=darkredFill)
+	rule = Rule(type="containsText", operator="containsText", text="SORT [", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("SORT [",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	
+	dxf = DifferentialStyle(fill=redFill)
+	rule = Rule(type="containsText", operator="containsText", text="> GROUPBY", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("> GROUPBY",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	
+	dxf = DifferentialStyle(fill=blueFill)
+	rule = Rule(type="containsText", operator="containsText", text="Outer -> STORAGE", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("Outer -> STORAGE",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	
+	dxf = DifferentialStyle(fill=greenFill)
+	rule = Rule(type="containsText", operator="containsText", text="Inner -> STORAGE", dxf=dxf)
+	rule.formula = ['NOT(ISERROR(SEARCH("Inner -> STORAGE",A19)))']
+	ws1.conditional_formatting.add('A19:ZZ99', rule)
+	# end 	
+	
+	return ws1
   
 # Method for creating Excel file if the file is not created already
 def createExcelFile(testname,queries):
@@ -447,8 +398,8 @@ def createExcelFile(testname,queries):
 				ws1.cell(row=5,column=(part-1)*10 + 2).font=bold22
 			
         	# Setting format for Query Profile Plan part of Excel file    
-		formatQueryProfilePlan(ws1)				    
-		
+		ws1 = formatQueryProfilePlan(ws1)				    
+	
 		# Width of cells
 		dims = {}
 		for row in ws1.rows:
@@ -470,22 +421,9 @@ def createExcelFile(testname,queries):
 		for part in range(1,len(queries)+2):			
             		for i in range(1,5):
                             	formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),14,((part-1)*10 + i))
-                    		#pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=redFill))
-                    		#pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=9, column=(part-1)*10 + i).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=9, column=(part-1)*10 + i).coordinate)], stopIfTrue=True, fill=greenFill))	
-			
-            		formatRedGreenFill(pattern,ws1,11,((part-1)*10 + 2),11,((part-1)*10 + 2))
-			#pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=greenFill))
-			#pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=11, column=(part-1)*10 + 2).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=11, column=(part-1)*10 + 2).coordinate)], stopIfTrue=True, fill=redFill))
-			
-			# USED BYTES PROJECTIONS
-            		for j in range(1,10):
-                            	formatRedGreenFill(pattern,ws1,14,((part-1)*10 + j),14,((part-1)*10 + j))
-                    		#pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=14, column=(part-1)*10 + j).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + j).coordinate)], stopIfTrue=True, fill=redFill))
-                        	#pattern.conditional_formatting.add('{0}'.format(pattern.cell(row=14, column=(part-1)*10 + j).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(ws1.cell(row=14, column=(part-1)*10 + j).coordinate)], stopIfTrue=True, fill=greenFill))			
 			
 			for i in range (1,5):
                 		formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
-				#pattern['{0}'.format(ws1.cell(row=10, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws1.cell(row=9, column=(part-1)*10+i).coordinate,pattern.cell(row=9, column=(part-1)*10+i).coordinate)       
 			    
 			if len(queries) == 1:
 				break
@@ -493,9 +431,10 @@ def createExcelFile(testname,queries):
 			if len(queries) > 1 and part == 1:
 				continue
 			
-			for i in range (1,10):                   
-                		formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
-				#pattern['{0}'.format(ws1.cell(row=15, column=(part-1)*10+i).coordinate)] = "=DBD!{0}-{1}".format(ws1.cell(row=14, column=(part-1)*10+i).coordinate,pattern.cell(row=14, column=(part-1)*10+i).coordinate)   
+			# USED BYTES PROJECTIONS
+            		for j in range(1,10):
+                            	formatRedGreenFill(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))
+                    		formatDifference(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))
 
         	# Method for creating Overview        
 		createOverview(ws,queries,testname) 
