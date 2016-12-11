@@ -62,6 +62,11 @@ class DBPerfComp(object):
 	# Method for sending data into the database
     	# calling method loadDataToExcel - loading data from monitoring into excel file
 	def monitor(self, length, tablename, testname,schema,query,listQueries):
+
+                print "MONITOR:"
+                for q in listQueries:
+                        print q		
+
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
@@ -78,6 +83,15 @@ class DBPerfComp(object):
 			row[8] = label
             
         	# loading data into the excel file
+		for qu in listQueries:
+			print "MONITOR BEFORE METHOD: "
+			print qu
+
+                print "SELF QUERIES:"
+                for qq in self.queries:
+                        print qq
+
+
             	loadDataToExcel(rows,query,schema,testname,listQueries)
 		
         	# sending data into the database
@@ -92,10 +106,19 @@ class DBPerfComp(object):
 		cursor.close()
     
 	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname):
+
+                print "EXECUTE TEST:"
+                for q in listQueries:
+                        print q
+
 		# For each iteration which is given in Config file
-		for i in range(0,iteration):
+		#for i in range(0,iteration):
 			# For each query which is given in Config file
-			for query in listQueries:
+		#	for query in listQueries:
+		# For each query which is given in Config file
+                for query in listQueries:
+			# For each iteration which is given in Config file
+                	for i in range(0,iteration):
 				# Loading query from folder
 				statement = self.extract(query)
 				# Executing given query
@@ -151,7 +174,23 @@ class DBPerfComp(object):
                                         	for row in rows:
                                                 	explainVerboseFile.write(row[0]+'\n')
                                 	explainVerboseFile.close()
-			
+				
+				monitor_statement_statement = self.extract('monitor_projections_size')
+				 # Executing MONITOR PROJECTION SIZE
+                                cursor.execute(monitor_statement_statement)
+
+                                # Loading data from database
+                                rows = cursor.fetchall()
+			        
+				fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)	
+				# Writing Explain into file
+                                with open(fileSize, "w+") as sizeFile:
+                                        for row in rows:
+						size = str(row[0]).split('.')
+						print "SIZE: " + size[0]
+                                                sizeFile.write(size[0]+'\n')
+                                sizeFile.close()
+
 				# Loading query for creating table in schema above
 				create_table_statement = self.extract('monitor_profile_create')
 
@@ -175,6 +214,7 @@ class DBPerfComp(object):
                 		# transaction_id and statement_id of executed profile query
 				TRANS_ID = rows[0][0]
 				STATEM_ID = rows[0][1]
+				
 
 				# Loading query for profile output
 				monitor_statement_statement = self.extract('monitor_profile')
@@ -196,21 +236,28 @@ class DBPerfComp(object):
 
                 		# Sending Query Profil Plan to datbase
 				for row in rows:
-					query = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
+					query_text = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
 					row[3] = row[3].replace("'", "/")
-					query = query.format(*row)
-					query = query.replace("TABLENAME", tablename)
-					cursor.execute(query)
+					query_text = query_text.format(*row)
+					query_text = query_text.replace("TABLENAME", tablename)
+					cursor.execute(query_text)
 					cursor.commit()
-                     		# Creating new sheet in specific XLSX file 
-                		duplicatePattern(schema,testname,listQueries,rows,query)
+
+	           		# Creating new sheet in specific XLSX file 
+                		duplicatePattern(schema,testname,listQueries,query)
                         	# Loading profile path to Excel
                 		loadProfilePath(schema,testname,rows,listQueries,query)		    
+				
 
 	# Method for running specific Query 
 	def runQuery(self,listQueries,listSchemas,iteration,testname,output_schema):
 		cursor = self.conn.cursor()
         	
+		print "RUN QUERY:"
+		for q in listQueries:
+			print q 
+
+
 		# Output_schema =  Name of schema where to load monitoring data
 	        # Creating schema in database
 		cursor.execute("CREATE SCHEMA IF NOT EXISTS %s" % output_schema)

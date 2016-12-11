@@ -29,6 +29,8 @@ bold36 = Font(bold=True,size=36)
 def formatRedGreenFill(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare):
 	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=redFill))
         ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=greenFill))  
+        ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='equal', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=orangeFill))
+
 
 # Method for setting deferences on two metrics        
 # Difference is situated one cell under comparing metrics
@@ -61,7 +63,8 @@ def createAVGTable(ws1,column_start):
         	       ws1.cell(row=9,column=cellColumn).fill=orangeFill
             
 	# Items - line
-    	ws1.cell(row=99, column=column_start, value=0)    
+    #	ws1.cell(row=99, column=column_start, value=int(0))
+	ws1["{0}".format(ws1.cell(row=99, column=column_start).coordinate)]=0    
 	ws1.cell(row=100, column=column_start, value="start_timestamp")
 	ws1.cell(row=100, column=column_start+1, value="transaction_id")
 	ws1.cell(row=100, column=column_start+2, value="statement_id")
@@ -103,7 +106,7 @@ def createOverview(ws,queries,testname):
     	ws.cell(row=11, column=2).font=bold36
     
         # Description - DBD
-	ws.cell(row=11, column=7, value="Description:")
+	ws.cell(row=11, column=14, value="Description:")
     
         # Copying AVG table from DBD schema
         #for part in range(1,len(queries)+2):
@@ -117,7 +120,17 @@ def createOverview(ws,queries,testname):
          	                   ws.cell(row=row_one+4,column=column_one).font=bold
                         if row_one == 9:
                         	   ws.cell(row=row_one+4,column=column_one).fill=orangeFill
-    
+    	
+	for i in range (1,10):
+                row_start = 15
+                ws.cell(row=row_start, column=1, value="Projection - Bytes:")
+                ws.cell(row=row_start,column=1).fill=lightblueFill
+                ws.cell(row=row_start,column=1).font=bold
+                ws.cell(row=row_start+1,column=i).fill=lightblueFill
+                ws.cell(row=row_start+1,column=i).font=bold
+                for j in range (0,2):
+                        ws['{0}'.format(ws.cell(row=row_start+j+1, column=i).coordinate)] = "=DBD!{0}".format(ws.cell(row=13+j, column=i).coordinate)
+
 	# Width of cells    
 	dims = {}
 	for row in ws.rows:
@@ -134,27 +147,37 @@ def addToOverview(wb,ws,new,queries,schema):
     	# For appropriate number of queries (>1 query >>> 1 more table)    
 	for part in range(1,len(queries)+2):
         # There is 5 columns: time,time,used memory, cpu, count of queries
-		for i in range (1,6):
-            		row_start = 21 + (int(ws.cell(row=4,column=2).value)-1)*10
-			column_one = (part-1)*10 + i
+		##for i in range (1,6):
+            	row_start = 21 + (int(ws.cell(row=4,column=2).value)-1)*10
+			##column_one = (part-1)*10 + i
                         # Schema and Description
-	        	ws.cell(row=row_start, column=1, value="Schema:")
-    	    		ws.cell(row=row_start, column=2, value=schema)
-            		ws.cell(row=row_start, column=2).font=bold36
+	        ws.cell(row=row_start, column=1, value="Schema:")
+    	    	ws.cell(row=row_start, column=2, value=schema)
+            	ws.cell(row=row_start, column=2).font=bold36
     
     		        # Description
-	       		ws.cell(row=row_start, column=4, value="Description:")
-            		# Copying data
+	       	ws.cell(row=row_start, column=14, value="Description:")
+            	for i in range (1,6):
+			column_one = (part-1)*10 + i
+			# Copying data
 			for j in range (0,3):
 				ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=8+j, column=column_one).coordinate)
-				if j == 0:
-					ws.cell(row=row_start+j+1,column=column_one).fill=blueFill
-					ws.cell(row=row_start+j+1,column=column_one).font=bold
-				if j == 1:
-					# Formatting - green/red 
-					formatRedGreenFill(ws,dbd,row_start+j+1,column_one,8+j,column_one)
-				
+			ws.cell(row=row_start+1,column=column_one).fill=blueFill
+			ws.cell(row=row_start+1,column=column_one).font=bold
 
+					# Formatting - green/red 
+			formatRedGreenFill(ws,dbd,row_start+2,column_one,9,column_one)
+	for i in range (1,10):
+        	row_start = 26 + (int(ws.cell(row=4,column=2).value)-1)*10
+		ws.cell(row=row_start, column=1, value="Projection - Bytes:")
+		ws.cell(row=row_start,column=1).fill=lightblueFill
+                ws.cell(row=row_start,column=1).font=bold
+                column_one = (part-1)*10 + i
+		ws.cell(row=row_start+1,column=i).fill=lightblueFill
+                ws.cell(row=row_start+1,column=i).font=bold
+		for j in range (0,3):
+	                ws['{0}'.format(ws.cell(row=row_start+j+1, column=i).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=13+j, column=i).coordinate)
+			formatRedGreenFill(ws,dbd,row_start+2,i,9,i)
 		# Formatting average table - green/red - in Pattern sheet
 #		for i in range(1,5):
 #			formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),14,((part-1)*10 + i))
@@ -196,51 +219,59 @@ def createProfile(ws1,column_start):
          	ws1.cell(row=18,column=cellColumn).font=bold           
   
         # Size of projections
-	ws1.cell(row=12, column=column_start, value="Projection - Bytes:")
-        ws1.cell(row=12,column=column_start).fill=lightblueFill    
-        ws1.cell(row=12,column=column_start).font=bold
+	ws1.cell(row=12,column=1, value="Projection - Bytes:")
+        ws1.cell(row=12,column=1).fill=lightblueFill    
+        ws1.cell(row=12,column=1).font=bold
         i = 0
         for name in ["Customer:","Lineitem:","Nation:","Orders:","Part:","Partsupp:","Region:","Supplier:","SUM:"]:
-                ws1.cell(row=13,column=column_start+i, value=name)
-                ws1.cell(row=13,column=column_start+i).fill=lightblueFill
-                ws1.cell(row=14,column=column_start+i).fill=greyFill
+                ws1.cell(row=13,column=1+i, value=name)
+                ws1.cell(row=13,column=1+i).fill=lightblueFill
+                #ws1.cell(row=14,column=1+i).fill=greyFill
                 i += 1
 
         ws1.cell(row=13,column=column_start+8).font=bold
-        ws1['{0}'.format(ws1.cell(row=14, column=column_start+8).coordinate)] = "=SUM({0}:{1})".format(ws1.cell(row=14, column=column_start).coordinate,ws1.cell(row=14, column=column_start+7).coordinate)
+        ws1['{0}'.format(ws1.cell(row=14, column=9).coordinate)] = "=SUM({0}:{1})".format(ws1.cell(row=14, column=1).coordinate,ws1.cell(row=14, column=8).coordinate)
 
 def loadDataToExcelToParticularTable(row,ws,start_column):
+	#ws.cell(row=99,column=start_column).value = 0
+	ws.cell(row=99,column=start_column).value += int(1)
 	for i in range (1,9):
     		# integer data type, 1.column is schema - not storing in Excel file
 		if i in [4,5,6,7]:
-			ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
+			ws['{0}'.format(ws.cell(row=100+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
     		# other data type
 		else:   
-			ws['{0}'.format(ws.cell(row=101+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
-        ws.cell(row=99,column=start_column).value += 1
+			print "i: " + str(i) 
+			print "Item: " + str(row[i])
+			ws['{0}'.format(ws.cell(row=100+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
     
 def loadDataToExcel(rows,query,schema,testname,queries):
         # Opening excel - must be created and sheet with specific schema must be created
         wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
         ws = wb[schema]
+	print "Lenght of queries: " + str(len(queries))
+	print "QUERIES: "
+	for quer in queries:
+		print quer + '\n'
 	for row in rows:
         	start_column = 1
             	#8 columns to store
             	loadDataToExcelToParticularTable(row,ws,start_column)
         	## increasing number of queries
-		ws.cell(row=99,column=start_column).value += 1
-		
         	# If there is more than 1 query, data are stored also in particular query table
 		if len(queries)>1:
 	                index = queries.index(query)
-			start_column_query= 10*(index+1) + 1
+			start_column_query= 10*(int(index)+1) + 1
+			print "Schema: " + schema
+			print "Query: " + query
+			print "Index: " + str(index)
+			print "Column: " + str(start_column_query)
 			loadDataToExcelToParticularTable(row,ws,start_column_query)
-			ws.cell(row=99,column=start_column_query).value += 1				    
         wb.save('CompareOutput/' + testname + '.xlsx')
 
 # Method for creating new sheer according to new schema
 # Particular step: duplicate Pattern sheet and fill Schema name
-def duplicatePattern(schema,testname,queries,rows,query):
+def duplicatePattern(schema,testname,queries,query):
     wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     ws = wb["DBD"]
     overview = wb["Overview"] 
@@ -255,7 +286,7 @@ def duplicatePattern(schema,testname,queries,rows,query):
 
 	for part in range(1,len(queries)+2):
 		for i in range(1,5):
-			formatRedGreenFill(new,ws,9,((part-1)*10 + i),14,((part-1)*10 + i))
+			formatRedGreenFill(new,ws,9,((part-1)*10 + i),9,((part-1)*10 + i))
 
 		for i in range (1,5):
 			formatDifference(new,ws,9,((part-1)*10+i),9,((part-1)*10+i))
@@ -267,10 +298,11 @@ def duplicatePattern(schema,testname,queries,rows,query):
 			continue
 
 		# USED BYTES PROJECTIONS
-		for j in range(1,10):
-			formatRedGreenFill(new,ws,14,((part-1)*10+j),14,((part-1)*10+j))
-			formatDifference(new,ws,14,((part-1)*10+j),14,((part-1)*10+j))	
-
+	for j in range(1,10):
+		formatRedGreenFill(new,ws,14,j,14,j)
+		formatDifference(new,ws,14,j,14,j)	
+	# Setting format for Query Profile Plan part of Excel file    
+        new = formatQueryProfilePlan(new)
 	wb.save('CompareOutput/' + testname + '.xlsx')        
 
 # Method for loading Query Profile Path into the excel file        
@@ -278,25 +310,41 @@ def loadProfilePath(schema,testname,rows,queries,query):
 	wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     	ws = wb[schema]	
         # NEROZLISUJE SE KOLIK JE QUERY!!!                
-        for i in range(1,len(queries)+2):
-        	if len(queries) == 1:
-            		start_column= 1
-            	if len(queries) > 1 and i == 1:
-                	continue
-            	if i > 1:                
-                	start_column= 10*(i+1) + 1        	
-                	#if ws.cell(row=5,column=start_column+1).value == query:
-                if str(ws['{0}'.format(ws.cell(row=5,column=start_column+1).coordinate)]) == str(query):
-			tmp_row = 0
-			for row in rows:
-				tmp_column = 0
-                		print "TEEEEEEEEEST"
-				for item in row:
-					print item				
-					#ws['{0}'.format(ws.cell(row=19+tmp_row,column=start_column+tmp_column).coordinate)]=str(item)
-					ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
-					tmp_column += 1
-				tmp_row += 1
+        #for i in range(1,len(queries)+2):
+	start_column = 1
+	if len(queries) > 1:
+		index = queries.index(query)                
+		start_column= 10*(int(index)+1) + 1
+		print "INDEX: " + str(index)
+		print "QUERY LOAD: " + query        	
+		print "COLUMN: " + str(start_column)
+	
+	tmp_row = 0
+	for row in rows:
+		tmp_column = 0
+		for item in row:
+	#dd		print item				
+				#ws['{0}'.format(ws.cell(row=19+tmp_row,column=start_column+tmp_column).coordinate)]=str(item)
+			ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
+			tmp_column += 1
+		tmp_row += 1
+	fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
+	# Writing Explain into file
+	#with open(fileSize, "r") as sizeFile:
+	#	for line in sizeFile:
+	#		if line is None:
+	#			break
+	sizeFile = open(fileSize, 'r+')	
+	for i in range(0,8):
+		f = sizeFile.readline()
+		print "FILE: " + f
+		column_index = 1 + i
+		print "COLUMN: " + str(column_index)
+#		ws["{0}".format(row=14,column=start_column+i).coordinate]="2"		
+		ws.cell(row=14,column=column_index,value=f) 
+	sizeFile.close()
+	wb.save('CompareOutput/{0}.xlsx'.format(testname))
+
          
 def formatQueryProfilePlan(ws1):  
 	dxf = DifferentialStyle(fill=yellowFill)
@@ -316,7 +364,7 @@ def formatQueryProfilePlan(ws1):
 	
 	dxf = DifferentialStyle(fill=pinkFill)
 	rule = Rule(type="containsText", operator="containsText", text="Projection:", dxf=dxf)
-	rule.formula = ['NOT(ISERROR(SEARCH("Projection:",A16)))']
+	rule.formula = ['NOT(ISERROR(SEARCH("Projection:",A19)))']
 	ws1.conditional_formatting.add('A19:ZZ99', rule)
 	
 	dxf = DifferentialStyle(fill=lightgreenFill)
@@ -368,7 +416,7 @@ def createExcelFile(testname,queries):
 		i = 2
 		for query in queries:
 			ws1.cell(row=2, column=i, value=query)
-			ws1.cell(row=1, column=i).font = bold22
+			ws1.cell(row=2, column=i).font = bold22
 			i += 1
 		    # Schema and Description
 		ws1.cell(row=3, column=1, value="Schema:")
@@ -419,8 +467,8 @@ def createExcelFile(testname,queries):
 	    
 		# Formatting average table - green/red - in Pattern sheet
 		for part in range(1,len(queries)+2):			
-            		for i in range(1,5):
-                            	formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),14,((part-1)*10 + i))
+            		#for i in range(1,5):
+                            	#formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),9,((part-1)*10 + i))
 			
 			for i in range (1,5):
                 		formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
@@ -432,9 +480,9 @@ def createExcelFile(testname,queries):
 				continue
 			
 			# USED BYTES PROJECTIONS
-            		for j in range(1,10):
-                            	formatRedGreenFill(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))
-                    		formatDifference(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))
+            	for j in range(1,10):
+                        #formatRedGreenFill(pattern,ws1,14,j,14,j)
+                    	formatDifference(pattern,ws1,14,j,14,j)
 
         	# Method for creating Overview        
 		createOverview(ws,queries,testname) 
