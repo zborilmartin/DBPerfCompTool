@@ -7,5 +7,6 @@ CREATE TABLE IF NOT EXISTS TABLENAME (
         resource_request_execution_ms BIGINT,
         used_memory_kb NUMERIC(20,5),
         CPU_TIME BIGINT,
-        label VARCHAR(100)
+        label VARCHAR(100),
+	query_number INTEGER
         );

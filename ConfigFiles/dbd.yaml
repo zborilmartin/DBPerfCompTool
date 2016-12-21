@@ -1,5 +1,5 @@
 Conf: 
     testName: test
-    queries: 1 4
-    schemas: tpch_10g
-    iteration: 10
+    queries: 1 4 5
+    schemas: tpch_10g DBD
+    iteration: 3

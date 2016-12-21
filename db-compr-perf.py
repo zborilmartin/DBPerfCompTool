@@ -66,11 +66,12 @@ class DBPerfComp(object):
                 print "MONITOR:"
                 for q in listQueries:
                         print q		
-
+		
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
-        	monitor_statement += " LIMIT %d" % length
+        	monitor_statement += " LIMIT 1"
+		monitor_statement = monitor_statement.replace("QUERYNUMBER", query)
 		cursor = self.conn.cursor()
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
