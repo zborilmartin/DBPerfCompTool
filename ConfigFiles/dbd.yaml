@@ -1,5 +1,22 @@
 Conf: 
     testName: test
     queries: 1 4 5
-    schemas: tpch_10g DBD
-    iteration: 3
+    schemas: tpch_1g DBD
+    iteration: 8
+    mode: COMPARE-ALL
+Clone:
+    source: tpch_1g
+    target: DBD
+Design:
+    design_name: my1
+    design_schema: DBD
+    design_schema_target: DBD
+    tables: LINEITEM REGION CUSTOMER PARTSUPP PART ORDERS NATION SUPPLIER
+    query_path: /home/martin.zboril/vertica/queriesVertica
+    queries: 5 2 3
+    type: COMPREHENSIVE
+    objective: BALANCED
+    deploy_path: /home/martin.zboril/vertica/output
+    deployment: 1
+    
+    

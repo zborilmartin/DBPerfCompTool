@@ -8,6 +8,7 @@ from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting import Rule
 from openpyxl import load_workbook    
 import os
+from shutil import copyfile
 
 # Setting colors and fonts
 blueFill = PatternFill(start_color="1EB4F5",end_color="1EB4F5",fill_type='solid')
@@ -21,6 +22,8 @@ lightblueFill = PatternFill(start_color="99FFFF",end_color="99FFFF",fill_type='s
 brownFill = PatternFill(start_color="994C00",end_color="994C00",fill_type='solid')
 lightgreenFill = PatternFill(start_color="CCFFCC",end_color="CCFFCC",fill_type='solid')
 greyFill = PatternFill(start_color="C0C0C0",end_color="C0C0C0",fill_type='solid')
+whiteFill = PatternFill(start_color="FFFFFF",end_color="FFFFFF",fill_type='solid')
+noneFill = PatternFill(patternType=None,start_color=None,end_color=None,fill_type=None)
 bold = Font(bold=True)
 bold22 = Font(bold=True,size=22)
 bold36 = Font(bold=True,size=36)
@@ -34,8 +37,12 @@ def formatRedGreenFill(ws,dbd,row_comparing,column_comparing,row_to_compare,colu
 
 # Method for setting deferences on two metrics        
 # Difference is situated one cell under comparing metrics
-def formatDifference(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare):
-        ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD!{0}-{1}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
+def formatDifference(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare,tpch=0):
+	if tpch == 0:
+	        ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD!{0}-{1}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
+	else:
+		ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD-ALL!{0}-{1}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
+
 
 # Method for setting function AVERAGE for each query and COUNT of queries
 def createAVGandCOUNT(ws1,column_start):
@@ -101,26 +108,33 @@ def createOverview(ws,queries,testname):
 	ws.cell(row=4, column=2, value=1)  
         
         # Schema - DBD
-	ws.cell(row=11, column=1, value="Schema:")
-    	ws.cell(row=11, column=2, value="DBD")
-    	ws.cell(row=11, column=2).font=bold36
+	ws.cell(row=8, column=1, value="Schema:")
+    	ws.cell(row=8, column=2, value="DBD")
+    	ws.cell(row=8, column=2).font=bold36
     
         # Description - DBD
-	ws.cell(row=11, column=14, value="Description:")
+	ws.cell(row=8, column=14, value="Description:")
     
         # Copying AVG table from DBD schema
-        #for part in range(1,len(queries)+2):
-                # columns
-        for i in range (1,6):
-                column_one = i
-                for row_one in range (8,10):                                
-                        ws['{0}'.format(ws.cell(row=row_one+4, column=column_one).coordinate)] = "=DBD!{0}".format(ws.cell(row=row_one, column=column_one).coordinate)
-                        if row_one == 8:
-                        	   ws.cell(row=row_one+4,column=column_one).fill=blueFill
-         	                   ws.cell(row=row_one+4,column=column_one).font=bold
-                        if row_one == 9:
-                        	   ws.cell(row=row_one+4,column=column_one).fill=orangeFill
-    	
+        for part in range(1,len(queries)+2):
+        # There is 5 columns: time,time,used memory, cpu, count of queries
+                ##for i in range (1,6):
+                row_start = 8
+                        # Description
+                ws.cell(row=row_start, column=14, value="Description:")
+                for i in range (1,6):
+                        column_one = (part-1)*10 + i
+                        # Copying data
+                        for j in range (0,2):
+                                ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "=DBD!{0}".format(ws.cell(row=8+j, column=column_one).coordinate)
+                        ws.cell(row=row_start+1,column=column_one).fill=blueFill
+                        ws.cell(row=row_start+1,column=column_one).font=bold
+			ws.cell(row=row_start+2,column=column_one).fill=orangeFill			
+
+		if part != 1:
+			ws.cell(row=row_start+1,column=(part-1)*10).font=bold22
+			ws.cell(row=row_start+1,column=(part-1)*10).value = '={0}'.format(ws.cell(row=3,column=part).coordinate)
+
 	for i in range (1,10):
                 row_start = 15
                 ws.cell(row=row_start, column=1, value="Projection - Bytes:")
@@ -130,6 +144,19 @@ def createOverview(ws,queries,testname):
                 ws.cell(row=row_start+1,column=i).font=bold
                 for j in range (0,2):
                         ws['{0}'.format(ws.cell(row=row_start+j+1, column=i).coordinate)] = "=DBD!{0}".format(ws.cell(row=13+j, column=i).coordinate)
+
+        ws.cell(row=15, column=11, value='All TPC-H queries')
+        ws.cell(row=15, column=11).font=bold22
+
+        for i in range (1,6):
+                column_one = 10 + i
+                # Copying data
+                row_start = 15
+                for j in range (0,2):
+                        ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "='DBD-ALL'!{0}".format(ws.cell(row=8+j, column=i).coordinate)
+                ws.cell(row=row_start+1,column=column_one).fill=blueFill
+                ws.cell(row=row_start+1,column=column_one).font=bold
+		ws.cell(row=row_start+2,column=column_one).fill=orangeFill
 
 	# Width of cells    
 	dims = {}
@@ -144,6 +171,9 @@ def createOverview(ws,queries,testname):
 def addToOverview(wb,ws,new,queries,schema):  
         # DBD schema - for comparing
     	dbd = wb['DBD']
+	name = schema + '-ALL'
+	newAll = wb[name]
+	dbdAll = wb['DBD-ALL']
     	# For appropriate number of queries (>1 query >>> 1 more table)    
 	for part in range(1,len(queries)+2):
         # There is 5 columns: time,time,used memory, cpu, count of queries
@@ -167,6 +197,26 @@ def addToOverview(wb,ws,new,queries,schema):
 
 					# Formatting - green/red 
 			formatRedGreenFill(ws,dbd,row_start+2,column_one,9,column_one)
+
+                if part != 1:
+                        ws.cell(row=row_start+1,column=(part-1)*10).font=bold22
+                        ws.cell(row=row_start+1,column=(part-1)*10).value = '={0}'.format(ws.cell(row=3,column=part).coordinate)
+
+	for i in range (1,6):
+		column_one = 10 + i
+		# Copying data
+		row_start = 26 + (int(ws.cell(row=4,column=2).value)-1)*10
+		if i == 1:
+			ws.cell(row=row_start, column=column_one, value='All TPC-H queries')
+        		ws.cell(row=row_start, column=column_one).font=bold22
+		for j in range (0,3):
+			ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "='{0}-ALL'!{1}".format(schema,newAll.cell(row=8+j, column=i).coordinate)
+		ws.cell(row=row_start+1,column=column_one).fill=blueFill
+		ws.cell(row=row_start+1,column=column_one).font=bold
+
+				# Formatting - green/red 
+		formatRedGreenFill(ws,dbdAll,row_start+2,column_one,9,i)
+
 	for i in range (1,10):
         	row_start = 26 + (int(ws.cell(row=4,column=2).value)-1)*10
 		ws.cell(row=row_start, column=1, value="Projection - Bytes:")
@@ -178,29 +228,7 @@ def addToOverview(wb,ws,new,queries,schema):
 		for j in range (0,3):
 	                ws['{0}'.format(ws.cell(row=row_start+j+1, column=i).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=13+j, column=i).coordinate)
 			formatRedGreenFill(ws,dbd,row_start+2,i,9,i)
-		# Formatting average table - green/red - in Pattern sheet
-#		for i in range(1,5):
-#			formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),14,((part-1)*10 + i))
-
-#		for i in range (1,5):
-#			formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
-
-#		if len(queries) == 1:
-#			break
-
-#		if len(queries) > 1 and part == 1:
-#			continue
-
-		# USED BYTES PROJECTIONS
-#		for j in range(1,10):
-#			formatRedGreenFill(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))
-#			formatDifference(pattern,ws1,14,((part-1)*10+j),14,((part-1)*10+j))       
-		# Formatting - green/red 
- 	                #if i < 5:
-                     #   	formatRedGreenFill(ws,dbd,(row_start+2),(column_one),(row_start+2),column_one)
-        	        	#ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_start+2, column=column_one).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(dbd.cell(row=9, column=column_one).coordinate)], stopIfTrue=True, fill=redFill))
-                		#ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_start+2, column=column_one).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(dbd.cell(row=9, column=column_one).coordinate)], stopIfTrue=True, fill=greenFill))                
-
+		
 
 def createProfile(ws1,column_start):
         # Query profile
@@ -245,42 +273,45 @@ def loadDataToExcelToParticularTable(row,ws,start_column):
 			print "Item: " + str(row[i])
 			ws['{0}'.format(ws.cell(row=100+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
     
-def loadDataToExcel(rows,query,schema,testname,queries):
+def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):
         # Opening excel - must be created and sheet with specific schema must be created
         wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
         ws = wb[schema]
-	print "Lenght of queries: " + str(len(queries))
-	print "QUERIES: "
-	for quer in queries:
-		print quer + '\n'
 	for row in rows:
         	start_column = 1
             	#8 columns to store
-            	loadDataToExcelToParticularTable(row,ws,start_column)
+	        loadDataToExcelToParticularTable(row,ws,start_column)
+		if tpch == 1:
+			continue
         	## increasing number of queries
         	# If there is more than 1 query, data are stored also in particular query table
 		if len(queries)>1:
 	                index = queries.index(query)
 			start_column_query= 10*(int(index)+1) + 1
-			print "Schema: " + schema
-			print "Query: " + query
-			print "Index: " + str(index)
-			print "Column: " + str(start_column_query)
 			loadDataToExcelToParticularTable(row,ws,start_column_query)
         wb.save('CompareOutput/' + testname + '.xlsx')
 
 # Method for creating new sheer according to new schema
 # Particular step: duplicate Pattern sheet and fill Schema name
-def duplicatePattern(schema,testname,queries,query):
+def duplicatePattern(schema,testname,queries,query,tpch=0):
     wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     ws = wb["DBD"]
-    overview = wb["Overview"] 
-    pattern = wb["Pattern"]    
-    # Creating new sheet
+    wsAll = wb["DBD-ALL"]
+    overview = wb["Overview"]
+    pattern = wb["Pattern"]
+    patternAll = wb["Pattern-ALL"]
+
+    # Creating snew sheet
     if schema not in wb.sheetnames:
         new = wb.copy_worksheet(pattern)
         new.cell(row=3, column=2, value=schema)
         new.title = schema
+
+        newAll = wb.copy_worksheet(patternAll)
+	name = schema + ' - All TPC-H queries'
+        newAll.cell(row=3, column=2, value=name)
+        newAll.title = schema + '-ALL'
+
         addToOverview(wb,overview,new,queries,schema)
         overview.cell(row=4,column=2).value = int(overview.cell(row=4,column=2).value) + 1 
 
@@ -303,45 +334,42 @@ def duplicatePattern(schema,testname,queries,query):
 		formatDifference(new,ws,14,j,14,j)	
 	# Setting format for Query Profile Plan part of Excel file    
         new = formatQueryProfilePlan(new)
+
+        for i in range(1,5):
+                formatRedGreenFill(newAll,wsAll,9,i,9,i)
+		formatDifference(newAll,wsAll,9,i,9,i)
+
+                # USED BYTES PROJECTIONS
+        for j in range(1,10):
+                formatRedGreenFill(newAll,wsAll,14,j,14,j)
+                formatDifference(newAll,wsAll,14,j,14,j) 
+
 	wb.save('CompareOutput/' + testname + '.xlsx')        
 
 # Method for loading Query Profile Path into the excel file        
 def loadProfilePath(schema,testname,rows,queries,query):
 	wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
-    	ws = wb[schema]	
-        # NEROZLISUJE SE KOLIK JE QUERY!!!                
-        #for i in range(1,len(queries)+2):
+    	ws = wb[schema]
+	name = schema + '-ALL'	
+	wsAll = wb[name]
 	start_column = 1
 	if len(queries) > 1:
 		index = queries.index(query)                
 		start_column= 10*(int(index)+1) + 1
-		print "INDEX: " + str(index)
-		print "QUERY LOAD: " + query        	
-		print "COLUMN: " + str(start_column)
-	
 	tmp_row = 0
 	for row in rows:
 		tmp_column = 0
 		for item in row:
-	#dd		print item				
-				#ws['{0}'.format(ws.cell(row=19+tmp_row,column=start_column+tmp_column).coordinate)]=str(item)
 			ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
 			tmp_column += 1
 		tmp_row += 1
-	fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
-	# Writing Explain into file
-	#with open(fileSize, "r") as sizeFile:
-	#	for line in sizeFile:
-	#		if line is None:
-	#			break
+	fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}.txt'.format(testname,testname,schema)
 	sizeFile = open(fileSize, 'r+')	
-	for i in range(0,8):
-		f = sizeFile.readline()
-		print "FILE: " + f
+	for i in range(0,9):
+		f = sizeFile.readline().split('\n')
 		column_index = 1 + i
-		print "COLUMN: " + str(column_index)
-#		ws["{0}".format(row=14,column=start_column+i).coordinate]="2"		
-		ws.cell(row=14,column=column_index,value=f) 
+		ws.cell(row=14,column=column_index,value=int(f[0])) 
+		wsAll.cell(row=14,column=column_index,value=int(f[0])) 
 	sizeFile.close()
 	wb.save('CompareOutput/{0}.xlsx'.format(testname))
 
@@ -460,16 +488,29 @@ def createExcelFile(testname,queries):
             
 		# Create pattern for other schemas
 		pattern = wb.copy_worksheet(ws1)
+       		
 		pattern.title = "Pattern"
-        
+                        
+                # Create pattern for ALL TPCH queries
+                patternAll = wb.copy_worksheet(ws1)
+		patternAll.title = "Pattern-ALL"
+
+		for row in patternAll.iter_rows('{0}:{1}'.format(patternAll.cell(row=5, column=11).coordinate,patternAll.cell(row=100, column=((len(queries)+1)*10)).coordinate)):
+                        #if len(queries) == 1:
+                        #        break
+			for cell in row:
+				cell.value = None			
+				cell.fill=noneFill
+
+		wsAll = wb.copy_worksheet(patternAll)
+                wsAll.title = "DBD-ALL"
+
         	# In DBD sheet set schema name to DBD
 		ws1.cell(row=3, column=2, value="DBD")
+		wsAll.cell(row=3, column=2, value="DBD")
 	    
 		# Formatting average table - green/red - in Pattern sheet
 		for part in range(1,len(queries)+2):			
-            		#for i in range(1,5):
-                            	#formatRedGreenFill(pattern,ws1,9,((part-1)*10 + i),9,((part-1)*10 + i))
-			
 			for i in range (1,5):
                 		formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
 			    
@@ -478,14 +519,23 @@ def createExcelFile(testname,queries):
 				
 			if len(queries) > 1 and part == 1:
 				continue
-			
-			# USED BYTES PROJECTIONS
+
+		# USED BYTES PROJECTIONS
             	for j in range(1,10):
-                        #formatRedGreenFill(pattern,ws1,14,j,14,j)
                     	formatDifference(pattern,ws1,14,j,14,j)
+
+		for i in range (1,5):
+                	formatDifference(patternAll,wsAll,9,i,9,i)
+
+		for j in range(1,10):
+                        formatDifference(patternAll,wsAll,14,j,14,j)
+
 
         	# Method for creating Overview        
 		createOverview(ws,queries,testname) 
  
 		wb.save('CompareOutput/' + testname + '.xlsx')
-	    
+	else:
+		if not os.path.exists('./CompareOutput/Backups'):
+                	os.makedirs('./CompareOutput/Backups')
+		copyfile('./CompareOutput/' + testname + '.xlsx','./CompareOutput/Backups/' + testname + '_backup.xlsx')

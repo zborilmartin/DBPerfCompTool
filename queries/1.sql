@@ -15,7 +15,7 @@ select  /*+ label(monitoring_tpch_query_1) */
 	avg(l_discount) as avg_disc,
 	count(*) as count_order
 from
-	tpch_10g.lineitem
+	lineitem
 where
 	l_shipdate <= date '1998-12-01' - interval '106' day
 group by
