@@ -1,5 +1,0 @@
-Conf: 
-    testName: my
-    queries: 2,3
-    schemas: tpch_10g
-    iteration: 2

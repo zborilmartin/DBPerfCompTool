@@ -425,6 +425,9 @@ def formatQueryProfilePlan(ws1):
   
 # Method for creating Excel file if the file is not created already
 def createExcelFile(testname,queries):
+        if not os.path.exists('./CompareOutput'):
+        	os.makedirs('./CompareOutput')
+
     	if not os.path.exists('./CompareOutput/' + testname + '.xlsx'):
 		# Create workbook and sheets
 		wb = Workbook()
