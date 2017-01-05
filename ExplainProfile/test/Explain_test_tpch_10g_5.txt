@@ -1,0 +1,173 @@
+------------------------------ 
+QUERY PLAN DESCRIPTION: 
+------------------------------
+
+EXPLAIN -- $ID$
+ -- TPC-H/TPC-R Local Supplier Volume Query (Q5)
+ -- Functional Query Definition
+ -- Approved February 1998
+ 
+ -- using 1458817223 as a seed to the RNG
+ -- using 1458817998 as a seed to the RNG
+ 
+ 
+ select  /*+ label(monitoring_tpch_query_5) */ n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST' and o_orderdate >= date '1997-01-01' and o_orderdate < date '1997-01-01' + interval '1' year group by n_name order by revenue desc LIMIT 1; -- using 1459869488 as a seed to the RNG
+
+
+Access Path:
++-SELECT  LIMIT 1 [Cost: 645K, Rows: 1 (NO STATISTICS)] (PATH ID: 0)
+|  Output Only: 1 tuples
+|  Execute on: Query Initiator
+| +---> SORT [TOPK] [Cost: 645K, Rows: 10K (NO STATISTICS)] (PATH ID: 1)
+| |      Order: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))) DESC
+| |      Output Only: 1 tuples
+| |      Execute on: All Nodes
+| | +---> GROUPBY HASH (GLOBAL RESEGMENT GROUPS) (LOCAL RESEGMENT GROUPS) [Cost: 645K, Rows: 10K (NO STATISTICS)] (PATH ID: 2)
+| | |      Aggregates: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))
+| | |      Group By: nation.N_NAME
+| | |      Execute on: All Nodes
+| | | +---> JOIN HASH [Cost: 85K, Rows: 40M (NO STATISTICS)] (PATH ID: 3)
+| | | |      Join Cond: (lineitem.L_ORDERKEY = orders.O_ORDERKEY) AND (customer.C_NATIONKEY = supplier.S_NATIONKEY)
+| | | |      Materialize at Input: lineitem.L_ORDERKEY, orders.O_ORDERKEY, orders.O_CUSTKEY
+| | | |      Materialize at Output: lineitem.L_EXTENDEDPRICE, lineitem.L_DISCOUNT
+| | | |      Execute on: All Nodes
+| | | | +-- Outer -> JOIN HASH [Cost: 20K, Rows: 40M (NO STATISTICS)] (PATH ID: 4)
+| | | | |      Join Cond: (lineitem.L_SUPPKEY = supplier.S_SUPPKEY)
+| | | | |      Materialize at Input: supplier.S_SUPPKEY, supplier.S_NATIONKEY
+| | | | |      Execute on: All Nodes
+| | | | | +-- Outer -> STORAGE ACCESS for lineitem [Cost: 13K, Rows: 60M (NO STATISTICS)] (PATH ID: 5)
+| | | | | |      Projection: tpch_10g.LINEITEM_b0
+| | | | | |      Materialize: lineitem.L_SUPPKEY
+| | | | | |      Execute on: All Nodes
+| | | | | |      Runtime Filters: (SIP4(HashJoin): lineitem.L_SUPPKEY), (SIP1(HashJoin): lineitem.L_ORDERKEY)
+| | | | | +-- Inner -> JOIN HASH [Cost: 219, Rows: 67K (NO STATISTICS)] (PATH ID: 6)
+| | | | | |      Join Cond: (supplier.S_NATIONKEY = nation.N_NATIONKEY)
+| | | | | |      Materialize at Input: nation.N_NATIONKEY, nation.N_NAME, nation.N_REGIONKEY
+| | | | | |      Execute on: All Nodes
+| | | | | | +-- Outer -> STORAGE ACCESS for supplier [Cost: 92, Rows: 100K (NO STATISTICS)] (PATH ID: 7)
+| | | | | | |      Projection: tpch_10g.SUPPLIER_super
+| | | | | | |      Materialize: supplier.S_NATIONKEY
+| | | | | | |      Execute on: All Nodes
+| | | | | | |      Runtime Filter: (SIP5(HashJoin): supplier.S_NATIONKEY)
+| | | | | | +-- Inner -> JOIN HASH [Cost: 16, Rows: 17 (NO STATISTICS)] (PATH ID: 8)
+| | | | | | |      Join Cond: (nation.N_REGIONKEY = region.R_REGIONKEY)
+| | | | | | |      Execute on: All Nodes
+| | | | | | | +-- Outer -> STORAGE ACCESS for nation [Cost: 5, Rows: 25 (NO STATISTICS)] (PATH ID: 9)
+| | | | | | | |      Projection: tpch_10g.NATION_super
+| | | | | | | |      Materialize: nation.N_REGIONKEY
+| | | | | | | |      Execute on: All Nodes
+| | | | | | | |      Runtime Filter: (SIP6(HashJoin): nation.N_REGIONKEY)
+| | | | | | | +-- Inner -> STORAGE ACCESS for region [Cost: 10, Rows: 4 (NO STATISTICS)] (PATH ID: 10)
+| | | | | | | |      Projection: tpch_10g.REGION_super
+| | | | | | | |      Materialize: region.R_REGIONKEY
+| | | | | | | |      Filter: (region.R_NAME = 'MIDDLE EAST')
+| | | | | | | |      Execute on: All Nodes
+| | | | +-- Inner -> JOIN HASH [Cost: 14K, Rows: 15M (NO STATISTICS)] (PATH ID: 11)
+| | | | |      Join Cond: (customer.C_CUSTKEY = orders.O_CUSTKEY)
+| | | | |      Execute on: All Nodes
+| | | | | +-- Outer -> STORAGE ACCESS for orders [Cost: 7K, Rows: 15M (NO STATISTICS)] (PATH ID: 12)
+| | | | | |      Projection: tpch_10g.ORDERS_b0
+| | | | | |      Materialize: orders.O_CUSTKEY
+| | | | | |      Filter: ((orders.O_ORDERDATE >= '1997-01-01'::date) AND (orders.O_ORDERDATE < '1998-01-01 00:00:00'::timestamp))
+| | | | | |      Execute on: All Nodes
+| | | | | |      Runtime Filter: (SIP7(HashJoin): orders.O_CUSTKEY)
+| | | | | +-- Inner -> STORAGE ACCESS for customer [Cost: 3K, Rows: 2M (NO STATISTICS)] (PATH ID: 13)
+| | | | | |      Projection: tpch_10g.CUSTOMER_super
+| | | | | |      Materialize: customer.C_CUSTKEY, customer.C_NATIONKEY
+| | | | | |      Execute on: All Nodes
+
+
+------------------------------ 
+----------------------------------------------- 
+PLAN: BASE QUERY PLAN (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = "BASE QUERY PLAN\nQuery: EXPLAIN -- $ID$\n -- TPC-H/TPC-R Local Supplier Volume Query (Q5)\n -- Functional Query Definition\n -- Approved February 1998\n \n -- using 1458817223 as a seed to the RNG\n -- using 1458817998 as a seed to the RNG\n \n \n select  /*+ label(monitoring_tpch_query_5) */ n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = \'MIDDLE EAST\' and o_orderdate \>= date \'1997-01-01\' and o_orderdate \< date \'1997-01-01\' + interval \'1\' year group by n_name order by revenue desc LIMIT 1; -- using 1459869488 as a seed to the RNG\n\n\nAll Nodes Vector: \n\n  node[0]=v_verticadb_node0001 (initiator) Up\n  node[1]=v_verticadb_node0002 (executor) Up\n  node[2]=v_verticadb_node0003 (executor) Up\n  node[3]=v_verticadb_node0004 (executor) Up\n", labelloc=t, labeljust=l ordering=out]
+0[label = "Root \nOutBlk=[UncTuple(2)]", color = "green", shape = "house"];
+1[label = "NewEENode \nOutBlk=[UncTuple(2)]", color = "green", shape = "box"];
+2[label = "TopK[PIPELINED]\n Sort: (keys = )\nLIMIT: 1\nOffset: 0\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  nation.N_NAME\n  \<SVAR\>\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+4[label = "Recv(keys = D,N)\nRecv from: v_verticadb_node0001,v_verticadb_node0002,v_verticadb_node0003,v_verticadb_node0004\nNet id: 1001\nMerge\n\nUnc: Numeric(35,4)\nUnc: Char(25)", color = "green", shape = "box"];
+5[label = "Send\nSend to: v_verticadb_node0001\nNet id: 1001\nMerge\n\nUnc: Numeric(35,4)\nUnc: Char(25)", color = "green", shape = "box"];
+6[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nUnc: Numeric(35,4)\nUnc: Char(25)", color = "green", shape = "box"];
+7[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME", color = "green", shape = "box"];
+8[label = "ParallelUnionStep: \nCombine\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+9[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+10[label = "ParallelUnionStep: \nLocally Resegment\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+11[label = "Recv\nRecv from: v_verticadb_node0001,v_verticadb_node0002,v_verticadb_node0003,v_verticadb_node0004\nNet id: 1000\n\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+12[label = "Send\nSend to: v_verticadb_node0001,v_verticadb_node0002,v_verticadb_node0003,v_verticadb_node0004\nNet id: 1000\nResegment\n\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+13[label = "ParallelUnionStep: \nCombine\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+14[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "green", shape = "box"];
+15[label = "StorageUnionStep: LINEITEM_b0\nLocally Resegment\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "purple", shape = "box"];
+16[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "brown", shape = "box"];
+17[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nUnc: Char(25)\nUnc: Numeric(35,4)", color = "brown", shape = "box"];
+18[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Numeric(15,2)\nUnc: Numeric(15,2)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "brown", shape = "box"];
+20[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\n\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "brown", shape = "box"];
+21[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nUnc: Integer(8)", color = "brown", shape = "box"];
+22[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nUnc: Integer(8)", color = "brown", shape = "box"];
+23[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "green", shape = "box"];
+24[label = "StorageUnionStep: SUPPLIER_super\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "purple", shape = "box"];
+25[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\n\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "brown", shape = "box"];
+26[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nUnc: Integer(8)", color = "brown", shape = "box"];
+27[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nUnc: Integer(8)", color = "brown", shape = "box"];
+28[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "green", shape = "box"];
+29[label = "StorageUnionStep: NATION_super\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "purple", shape = "box"];
+30[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\n\nUnc: Integer(8)\nUnc: Char(25)\nUnc: Integer(8)", color = "brown", shape = "box"];
+31[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nUnc: Integer(8)", color = "brown", shape = "box"];
+32[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nUnc: Integer(8)", color = "brown", shape = "box"];
+33[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nUnc: Integer(8)", color = "green", shape = "box"];
+34[label = "StorageUnionStep: REGION_super\nUnc: Integer(8)", color = "purple", shape = "box"];
+35[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nR_REGIONKEY\nR_NAME (not emitted)\nUnc: Integer(8)", color = "brown", shape = "box"];
+36[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Integer(8)", color = "green", shape = "box"];
+37[label = "StorageUnionStep: ORDERS_b0\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Integer(8)", color = "purple", shape = "box"];
+38[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\n\nUnc: Integer(8)\nUnc: Integer(8)\nUnc: Integer(8)", color = "brown", shape = "box"];
+39[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nUnc: Integer(8)", color = "brown", shape = "box"];
+40[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nUnc: Integer(8)", color = "brown", shape = "box"];
+41[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nUnc: Integer(8)\nUnc: Integer(8)", color = "green", shape = "box"];
+42[label = "StorageUnionStep: CUSTOMER_super\nUnc: Integer(8)\nUnc: Integer(8)", color = "purple", shape = "box"];
+43[label = "ScanStep: CUSTOMER_super\nC_CUSTKEY\nC_NATIONKEY\nUnc: Integer(8)\nUnc: Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "V[0] C=2",color = "black",style="bold", arrowtail="inv"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->18 [label = "0",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->20 [label = "1",color = "blue"];
+24->23 [label = "0",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->25 [label = "1",color = "blue"];
+29->28 [label = "0",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->31 [label = "0",color = "blue"];
+33->30 [label = "1",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->18 [label = "1",color = "blue"];
+37->36 [label = "0",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+40->39 [label = "0",color = "blue"];
+41->38 [label = "1",color = "blue"];
+42->41 [label = "0",color = "blue"];
+43->42 [label = "0",color = "blue"];
+}

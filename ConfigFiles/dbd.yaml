@@ -1,12 +1,14 @@
 Conf: 
     testName: test
     queries: 1 4 5
-    schemas: tpch_1g DBD
+    schemas: tpch_10g
     iteration: 8
-    mode: COMPARE-ALL
-Clone:
-    source: tpch_1g
-    target: DBD
+    mode: SCHEMA
+Schema:
+    name: design1
+    data_path: /mnt/ebs/vertica/tpch/10g
+    schema_path: tpch-data-model-vertica_customized
+    copy_query_path: copy_tpch_data 
 Design:
     design_name: my1
     design_schema: DBD

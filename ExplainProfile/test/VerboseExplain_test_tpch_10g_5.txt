@@ -1,0 +1,817 @@
+------------------------------ 
+QUERY PLAN DESCRIPTION: 
+------------------------------
+
+Opt Vertica Options
+--------------------
+PLAN_OUTPUT_SUPER_VERBOSE
+
+
+EXPLAIN VERBOSE -- $ID$
+ -- TPC-H/TPC-R Local Supplier Volume Query (Q5)
+ -- Functional Query Definition
+ -- Approved February 1998
+ 
+ -- using 1458817223 as a seed to the RNG
+ -- using 1458817998 as a seed to the RNG
+ 
+ 
+ select  /*+ label(monitoring_tpch_query_5) */ n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST' and o_orderdate >= date '1997-01-01' and o_orderdate < date '1997-01-01' + interval '1' year group by n_name order by revenue desc LIMIT 1; -- using 1459869488 as a seed to the RNG
+
+
+Access Path:
++-SELECT  LIMIT 1 [Cost: 645124.000000, Rows: 1.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 49] (PATH ID: 0)
+|  Output Only: 1 tuples
+|  Execute on: Query Initiator
+|  LDISTRIB_UNSEGMENTED
+| +---> SORT [TOPK] [Cost: 645124.000000, Rows: 10000.000000 Disk(B): 0.000000 CPU(B): 5447962.075615 Memory(B): 490000.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 49] (PATH ID: 1)
+| |      Order: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))) DESC
+| |      Output Only: 1 tuples
+| |      Execute on: All Nodes
+| |      LDISTRIB_UNSEGMENTED
+| | +---> GROUPBY HASH (GLOBAL RESEGMENT GROUPS) (LOCAL RESEGMENT GROUPS) [Cost: 645084.000000, Rows: 10000.000000 Disk(B): 0.000000 CPU(B): 3239246457.000000 Memory(B): 1140000.000000 Netwrk(B): 3239736457.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 49] (PATH ID: 2)
+| | |      Aggregates: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))
+| | |      Group By: nation.N_NAME
+| | |      Execute on: All Nodes
+| | |      Sort Key: (NATION.N_NAME)
+| | |      LDISTRIB_SEGMENTED
+| | | +---> JOIN HASH [Cost: 85342.000000, Rows: 39990697.000000 Disk(B): 420888567.978395 CPU(B): 3079395598.000000 Memory(B): 599999960.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 81] (PATH ID: 3)
+| | | |      Join Cond: (lineitem.L_ORDERKEY = orders.O_ORDERKEY) AND (customer.C_NATIONKEY = supplier.S_NATIONKEY)
+| | | |      Materialize at Input: lineitem.L_ORDERKEY, orders.O_ORDERKEY, orders.O_CUSTKEY
+| | | |      Materialize at Output: lineitem.L_EXTENDEDPRICE, lineitem.L_DISCOUNT
+| | | |      Execute on: All Nodes
+| | | |      Sort Key: (LINEITEM.L_ORDERKEY, LINEITEM.L_LINENUMBER)
+| | | |      LDISTRIB_SEGMENTED
+| | | | +-- Outer -> JOIN HASH [Cost: 19635.000000, Rows: 39990702.000000 Disk(B): 425984.000000 CPU(B): 975510244.000000 Memory(B): 19466764.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 57] (PATH ID: 4)
+| | | | |      Join Cond: (lineitem.L_SUPPKEY = supplier.S_SUPPKEY)
+| | | | |      Materialize at Input: supplier.S_SUPPKEY, supplier.S_NATIONKEY
+| | | | |      Execute on: All Nodes
+| | | | |      Sort Key: (LINEITEM.L_ORDERKEY, LINEITEM.L_LINENUMBER)
+| | | | |      LDISTRIB_SEGMENTED
+| | | | | +-- Outer -> STORAGE ACCESS for lineitem [Cost: 13198.000000, Rows: 59986052.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 8] (PATH ID: 5)
+| | | | | |      Column Cost Aspects: [ Disk(B): 120242176.000000 CPU(B): 0.000000 Memory(B): 479888416.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 ]
+| | | | | |      Projection: tpch_10g.LINEITEM_b0
+| | | | | |      Materialize: lineitem.L_SUPPKEY
+| | | | | |      Execute on: All Nodes
+| | | | | |      Runtime Filters: (SIP4(HashJoin): lineitem.L_SUPPKEY), (SIP1(HashJoin): lineitem.L_ORDERKEY)
+| | | | | |      Sort Key: (LINEITEM.L_ORDERKEY, LINEITEM.L_LINENUMBER)
+| | | | | |      LDISTRIB_SEGMENTED
+| | | | | +-- Inner -> JOIN HASH [Cost: 219.000000, Rows: 66667.000000 Disk(B): 49152.000000 CPU(B): 4003468.000000 Memory(B): 4420.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 49] (PATH ID: 6)
+| | | | | |      Join Cond: (supplier.S_NATIONKEY = nation.N_NATIONKEY)
+| | | | | |      Materialize at Input: nation.N_NATIONKEY, nation.N_NAME, nation.N_REGIONKEY
+| | | | | |      Execute on: All Nodes
+| | | | | |      Sort Key: (SUPPLIER.S_SUPPKEY)
+| | | | | |      LDISTRIB_SEGMENTED
+| | | | | | +-- Outer -> STORAGE ACCESS for supplier [Cost: 92.000000, Rows: 100000.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 8] (PATH ID: 7)
+| | | | | | |      Column Cost Aspects: [ Disk(B): 212992.000000 CPU(B): 0.000000 Memory(B): 800000.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 ]
+| | | | | | |      Projection: tpch_10g.SUPPLIER_super
+| | | | | | |      Materialize: supplier.S_NATIONKEY
+| | | | | | |      Execute on: All Nodes
+| | | | | | |      Runtime Filter: (SIP5(HashJoin): supplier.S_NATIONKEY)
+| | | | | | |      Sort Key: (SUPPLIER.S_SUPPKEY)
+| | | | | | |      LDISTRIB_SEGMENTED
+| | | | | | +-- Inner -> JOIN HASH [Cost: 16.000000, Rows: 17.000000 Disk(B): 0.000000 CPU(B): 1160.000000 Memory(B): 384.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 8] (PATH ID: 8)
+| | | | | | |      Join Cond: (nation.N_REGIONKEY = region.R_REGIONKEY)
+| | | | | | |      Execute on: All Nodes
+| | | | | | |      Sort Key: (NATION.N_NATIONKEY)
+| | | | | | |      LDISTRIB_SEGMENTED
+| | | | | | | +-- Outer -> STORAGE ACCESS for nation [Cost: 5.000000, Rows: 25.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 8] (PATH ID: 9)
+| | | | | | | |      Column Cost Aspects: [ Disk(B): 16384.000000 CPU(B): 0.000000 Memory(B): 200.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 ]
+| | | | | | | |      Projection: tpch_10g.NATION_super
+| | | | | | | |      Materialize: nation.N_REGIONKEY
+| | | | | | | |      Execute on: All Nodes
+| | | | | | | |      Runtime Filter: (SIP6(HashJoin): nation.N_REGIONKEY)
+| | | | | | | |      Sort Key: (NATION.N_NATIONKEY)
+| | | | | | | |      LDISTRIB_SEGMENTED
+| | | | | | | +-- Inner -> STORAGE ACCESS for region [Cost: 10.000000, Rows: 4.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 8] (PATH ID: 10)
+| | | | | | | |      Column Cost Aspects: [ Disk(B): 32768.000000 CPU(B): 16384.000000 Memory(B): 123.333333 Netwrk(B): 0.000000 Parallelism: 1.000000 ]
+| | | | | | | |      Projection: tpch_10g.REGION_super
+| | | | | | | |      Materialize: region.R_REGIONKEY
+| | | | | | | |      Filter: (region.R_NAME = 'MIDDLE EAST')/* sel=0.666667 ndv= 2 */
+| | | | | | | |      Execute on: All Nodes
+| | | | | | | |      Sort Key: (REGION.R_REGIONKEY)
+| | | | | | | |      LDISTRIB_SEGMENTED
+| | | | +-- Inner -> JOIN HASH [Cost: 13898.000000, Rows: 14999999.000000 Disk(B): 0.000000 CPU(B): 347999984.000000 Memory(B): 192000000.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 16] (PATH ID: 11)
+| | | | |      Join Cond: (customer.C_CUSTKEY = orders.O_CUSTKEY)
+| | | | |      Execute on: All Nodes
+| | | | |      Sort Key: (ORDERS.O_ORDERKEY)
+| | | | |      LDISTRIB_SEGMENTED
+| | | | | +-- Outer -> STORAGE ACCESS for orders [Cost: 6786.000000, Rows: 14999999.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 4.000000 (NO STATISTICS)] [OutRowSz (B): 8] (PATH ID: 12)
+| | | | | |      Column Cost Aspects: [ Disk(B): 60162048.000000 CPU(B): 30081024.000000 Memory(B): 239999984.000002 Netwrk(B): 0.000000 Parallelism: 4.000000 ]
+| | | | | |      Projection: tpch_10g.ORDERS_b0
+| | | | | |      Materialize: orders.O_CUSTKEY
+| | | | | |      Filter: ((orders.O_ORDERDATE >= '1997-01-01'::date) AND (orders.O_ORDERDATE < '1998-01-01 00:00:00'::timestamp))/* sel=1.000000 ndv= 500 */
+| | | | | |      Execute on: All Nodes
+| | | | | |      Runtime Filter: (SIP7(HashJoin): orders.O_CUSTKEY)
+| | | | | |      Sort Key: (ORDERS.O_ORDERKEY)
+| | | | | |      LDISTRIB_SEGMENTED
+| | | | | +-- Inner -> STORAGE ACCESS for customer [Cost: 2644.000000, Rows: 1500000.000000 Disk(B): 0.000000 CPU(B): 0.000000 Memory(B): 0.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 (NO STATISTICS)] [OutRowSz (B): 16] (PATH ID: 13)
+| | | | | |      Column Cost Aspects: [ Disk(B): 6029312.000000 CPU(B): 0.000000 Memory(B): 24000000.000000 Netwrk(B): 0.000000 Parallelism: 1.000000 ]
+| | | | | |      Projection: tpch_10g.CUSTOMER_super
+| | | | | |      Materialize: customer.C_CUSTKEY, customer.C_NATIONKEY
+| | | | | |      Execute on: All Nodes
+| | | | | |      Sort Key: (CUSTOMER.C_CUSTKEY)
+| | | | | |      LDISTRIB_SEGMENTED
+
+
+------------------------------ 
+----------------------------------------------- 
+Plan Extras
+----------------------------------------------- 
+
+
+digraph G {
+graph [rankdir=BT, label = "JoinGraph(Base)\nGuaranteed Uniqueness: \n(nation.N_NAME)", labelloc=t, labeljust=l ]
+node140196598527504_0[label = "node 0 customer (tpch_10g.CUSTOMER)\noid 58546795155837484 varno = 1", color = "black"];
+node140196598527504_1[label = "node 1 orders (tpch_10g.ORDERS)\noid 58546795155837526 varno = 2\npreds: \n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))", color = "black"];
+node140196598527504_2[label = "node 2 lineitem (tpch_10g.LINEITEM)\noid 58546795155837530 varno = 3", color = "black"];
+node140196598527504_3[label = "node 3 supplier (tpch_10g.SUPPLIER)\noid 58546795155837416 varno = 4", color = "black"];
+node140196598527504_4[label = "node 4 nation (tpch_10g.NATION)\noid 58546795155837322 varno = 5", color = "black"];
+node140196598527504_5[label = "node 5 region (tpch_10g.REGION)\noid 58546795155837348 varno = 6\npreds: \n(region.R_NAME = \'MIDDLE EAST\')", color = "black"];
+node140196598527504_0 -> node140196598527504_1[dir="none" label="\nJoin preds: \n(customer.C_CUSTKEY = orders.O_CUSTKEY)\nUnique: 0 \nNot Null: 0 1 \nprops: [IJ]"];
+node140196598527504_0 -> node140196598527504_3[dir="none" label="\nJoin preds: \n(customer.C_NATIONKEY = supplier.S_NATIONKEY)\nNot Null: 0 3 \nprops: [IJ]"];
+node140196598527504_1 -> node140196598527504_2[dir="none" label="\nJoin preds: \n(lineitem.L_ORDERKEY = orders.O_ORDERKEY)\nUnique: 1 \nNot Null: 1 2 \nprops: [IJ]"];
+node140196598527504_2 -> node140196598527504_3[dir="none" label="\nJoin preds: \n(lineitem.L_SUPPKEY = supplier.S_SUPPKEY)\nUnique: 3 \nNot Null: 2 3 \nprops: [IJ]"];
+node140196598527504_3 -> node140196598527504_4[dir="none" label="\nJoin preds: \n(supplier.S_NATIONKEY = nation.N_NATIONKEY)\nUnique: 4 \nNot Null: 3 4 \nprops: [IJ]"];
+node140196598527504_4 -> node140196598527504_5[dir="none" label="\nJoin preds: \n(nation.N_REGIONKEY = region.R_REGIONKEY)\nUnique: 5 \nNot Null: 4 5 \nprops: [IJ]"];
+}
+
+Table Name -> JoinGraph Node Mappings: 
+tpch_10g.CUSTOMER: Node 0(JoinGraph ID: 1)
+tpch_10g.ORDERS: Node 1(JoinGraph ID: 1)
+tpch_10g.LINEITEM: Node 2(JoinGraph ID: 1)
+tpch_10g.SUPPLIER: Node 3(JoinGraph ID: 1)
+tpch_10g.NATION: Node 4(JoinGraph ID: 1)
+tpch_10g.REGION: Node 5(JoinGraph ID: 1)
+
+Join Descriptions: 
+(tpch_10g.CUSTOMER x tpch_10g.ORDERS(JoinGraph ID: 1)
+(tpch_10g.CUSTOMER x tpch_10g.SUPPLIER(JoinGraph ID: 1)
+(tpch_10g.ORDERS x tpch_10g.LINEITEM(JoinGraph ID: 1)
+(tpch_10g.LINEITEM x tpch_10g.SUPPLIER(JoinGraph ID: 1)
+(tpch_10g.SUPPLIER x tpch_10g.NATION(JoinGraph ID: 1)
+(tpch_10g.NATION x tpch_10g.REGION(JoinGraph ID: 1)
+
+
+Projections chosen for tables: 
+   tpch_10g.CUSTOMER: CUSTOMER_super
+     tpch_10g.ORDERS: ORDERS_b0
+   tpch_10g.LINEITEM: LINEITEM_b0
+   tpch_10g.SUPPLIER: SUPPLIER_super
+     tpch_10g.NATION: NATION_super
+     tpch_10g.REGION: REGION_super
+
+Simplified Join Order:
+-----------------------
+
+
+digraph G {
+graph [label = "Simplified Join Order: \n(1,0) [customer] --> CUSTOMER_super for tpch_10g.CUSTOMER\n(1,1) [orders] --> ORDERS_b0 for tpch_10g.ORDERS\n(1,2) [lineitem] --> LINEITEM_b0 for tpch_10g.LINEITEM\n(1,3) [supplier] --> SUPPLIER_super for tpch_10g.SUPPLIER\n(1,4) [nation] --> NATION_super for tpch_10g.NATION\n(1,5) [region] --> REGION_super for tpch_10g.REGION\n", labelloc=t, labeljust=l ] 
+0[shape = "record" label = "SELECT"];
+0->1 [label = "" color = "black" ];
+1[shape = "record" label = "SORT"];
+1->2 [label = "" color = "black" ];
+2[shape = "record" label = "GROUPBY"];
+2->3 [label = "" color = "black" ];
+3[shape = "record" label = "HJO:I: "];
+3->4 [label = "" color = "black" ];
+4[shape = "record" label = "HJO:(1,2)I: "];
+4->5 [label = "" color = "black" ];
+5[shape = "record" label = "P(1,2)"];
+4->6 [label = "" color = "black" ];
+6[shape = "record" label = "HJO:(1,3)I: "];
+6->7 [label = "" color = "black" ];
+7[shape = "record" label = "P(1,3)"];
+6->8 [label = "" color = "black" ];
+8[shape = "record" label = "HJO:(1,4)I:(1,5) "];
+8->9 [label = "" color = "black" ];
+9[shape = "record" label = "P(1,4)"];
+8->10 [label = "" color = "black" ];
+10[shape = "record" label = "P(1,5)"];
+6->11 [label = "" color = "black" ];
+11[shape = "record" label = "P(1,4)"];
+4->12 [label = "" color = "black" ];
+12[shape = "record" label = "P(1,3)"];
+3->13 [label = "" color = "black" ];
+13[shape = "record" label = "P(1,2)"];
+3->14 [label = "" color = "black" ];
+14[shape = "record" label = "HJO:(1,1)I:(1,0) "];
+14->15 [label = "" color = "black" ];
+15[shape = "record" label = "P(1,1)"];
+14->16 [label = "" color = "black" ];
+16[shape = "record" label = "P(1,0)"];
+3->17 [label = "" color = "black" ];
+17[shape = "record" label = "P(1,1)"];
+}
+
+
+
+----------------------------------------------- 
+PLAN: BASE QUERY PLAN (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = "BASE QUERY PLAN\nQuery: EXPLAIN VERBOSE -- $ID$\n -- TPC-H/TPC-R Local Supplier Volume Query (Q5)\n -- Functional Query Definition\n -- Approved February 1998\n \n -- using 1458817223 as a seed to the RNG\n -- using 1458817998 as a seed to the RNG\n \n \n select  /*+ label(monitoring_tpch_query_5) */ n_name, sum(l_extendedprice * (1 - l_discount)) as revenue from customer, orders, lineitem, supplier, nation, region where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = \'MIDDLE EAST\' and o_orderdate \>= date \'1997-01-01\' and o_orderdate \< date \'1997-01-01\' + interval \'1\' year group by n_name order by revenue desc LIMIT 1; -- using 1459869488 as a seed to the RNG\n\n\nAll Nodes Vector: \n\n  node[0]=v_verticadb_node0001 (initiator) Up\n  node[1]=v_verticadb_node0002 (executor) Up\n  node[2]=v_verticadb_node0003 (executor) Up\n  node[3]=v_verticadb_node0004 (executor) Up\n", labelloc=t, labeljust=l ordering=out]
+0[label = "Root \nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "house"];
+1[label = "NewEENode \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "box"];
+2[label = "TopK[PIPELINED]\n Sort: (keys = )\nLIMIT: 1\nOffset: 0\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: \<SVAR\>[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  nation.N_NAME\n  \<SVAR\>\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: \<SVAR\>[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+4[label = "Recv(keys = D,N)\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+5[label = "Send\nSend to: v_verticadb_node0001(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+6[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+7[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]", color = "green", shape = "box"];
+8[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+9[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+10[label = "ParallelUnionStep: \nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+11[label = "Recv\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+12[label = "Send\nSend to: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\nResegment\nv_verticadb_node0001 --\> \"(int8and(coalesce(hash(VAL(0)), 0), 4294967295) \< 1073741824)\", v_verticadb_node0002 --\> \"(int8and(coalesce(hash(VAL(0)), 0), 4294967295) \< 2147483648)\", v_verticadb_node0003 --\> \"(int8and(coalesce(hash(VAL(0)), 0), 4294967295) \< 3221225472)\", v_verticadb_node0004 --\> \"true\"\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+13[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+14[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+15[label = "StorageUnionStep: LINEITEM_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "purple", shape = "box"];
+16[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+17[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+18[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_OUTER_JK_SORTED][JF_INNER_JK_SORTED]\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n  lineitem.L_ORDERKEY<==>orders.O_ORDERKEY\n  supplier.S_NATIONKEY<==>customer.C_NATIONKEY\nSIPExpr Ids: 1,2,3\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: orders.O_CUSTKEY[2,2] - Integer(8)\nUnc: L_EXTENDEDPRICE[3,6] - Numeric(15,2)\nUnc: L_DISCOUNT[3,7] - Numeric(15,2)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+20[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  lineitem.L_SUPPKEY<==>supplier.S_SUPPKEY\nSIPExpr Ids: 4\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+21[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+22[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+23[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+24[label = "StorageUnionStep: SUPPLIER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+25[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  supplier.S_NATIONKEY<==>nation.N_NATIONKEY\nSIPExpr Ids: 5\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+26[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+27[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+28[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+29[label = "StorageUnionStep: NATION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+30[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  nation.N_REGIONKEY<==>region.R_REGIONKEY\nSIPExpr Ids: 6\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+31[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+32[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+33[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "green", shape = "box"];
+34[label = "StorageUnionStep: REGION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "purple", shape = "box"];
+35[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nR_REGIONKEY\nR_NAME (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "brown", shape = "box"];
+36[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "green", shape = "box"];
+37[label = "StorageUnionStep: ORDERS_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "purple", shape = "box"];
+38[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  orders.O_CUSTKEY<==>customer.C_CUSTKEY\nSIPExpr Ids: 7\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+39[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+40[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nstartEpoch 0\nendEpoch 151\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+41[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "green", shape = "box"];
+42[label = "StorageUnionStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "purple", shape = "box"];
+43[label = "ScanStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nC_CUSTKEY\nC_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "V[0] S=0, D=0",color = "black"];
+1->0 [label = "V[0] S=1, D=1",color = "black"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->18 [label = "0",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->20 [label = "1",color = "blue"];
+24->23 [label = "0",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->25 [label = "1",color = "blue"];
+29->28 [label = "0",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->31 [label = "0",color = "blue"];
+33->30 [label = "1",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->18 [label = "1",color = "blue"];
+37->36 [label = "0",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+40->39 [label = "0",color = "blue"];
+41->38 [label = "1",color = "blue"];
+42->41 [label = "0",color = "blue"];
+43->42 [label = "0",color = "blue"];
+}
+Estimated resources for plan:
+-----------------------------
+Scratch Memory MB: 1815
+File Handles:      81
+Worker Threads:    40
+Blocking Threads:  13
+Externalizing Ops: 4
+Unbounded Mem Ops: 5
+Max Threads:     2
+
+Extra Memory Reservation MB 953
+-----------------------------
+----------------------------------------------- 
+PLAN:  ANNOTATED BY DISTRIBUTOR  (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = " ANNOTATED BY DISTRIBUTOR \n", labelloc=t, labeljust=l ordering=out]
+0[label = "Root \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "house"];
+1[label = "NewEENode \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "box"];
+2[label = "TopK[PIPELINED]\n Sort: (keys = )\nLIMIT: 1\nOffset: 0\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: \<SVAR\>[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  nation.N_NAME\n  \<SVAR\>\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: \<SVAR\>[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+4[label = "Recv(keys = D,N)\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+5[label = "Send\nSend to: v_verticadb_node0001(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+6[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+7[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]", color = "green", shape = "box"];
+8[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+9[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+10[label = "ParallelUnionStep: \nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+11[label = "Recv\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+12[label = "Send\nSend to: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\nResegment\nv_verticadb_node0001 --\> \"(int8and(coalesce(hash(VAL(0)), 0), 4294967295) \< 1073741824)\", v_verticadb_node0002 --\> \"(int8and(coalesce(hash(VAL(0)), 0), 4294967295) \< 2147483648)\", v_verticadb_node0003 --\> \"(int8and(coalesce(hash(VAL(0)), 0), 4294967295) \< 3221225472)\", v_verticadb_node0004 --\> \"true\"\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+13[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+14[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+15[label = "StorageUnionStep: LINEITEM_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "purple", shape = "box"];
+16[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+17[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+18[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_OUTER_JK_SORTED][JF_INNER_JK_SORTED]\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n  lineitem.L_ORDERKEY<==>orders.O_ORDERKEY\n  supplier.S_NATIONKEY<==>customer.C_NATIONKEY\nSIPExpr Ids: 1,2,3\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: orders.O_CUSTKEY[2,2] - Integer(8)\nUnc: L_EXTENDEDPRICE[3,6] - Numeric(15,2)\nUnc: L_DISCOUNT[3,7] - Numeric(15,2)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+20[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  lineitem.L_SUPPKEY<==>supplier.S_SUPPKEY\nSIPExpr Ids: 4\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+21[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+22[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+23[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+24[label = "StorageUnionStep: SUPPLIER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+25[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  supplier.S_NATIONKEY<==>nation.N_NATIONKEY\nSIPExpr Ids: 5\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+26[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+27[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+28[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+29[label = "StorageUnionStep: NATION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+30[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  nation.N_REGIONKEY<==>region.R_REGIONKEY\nSIPExpr Ids: 6\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+31[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+32[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+33[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "green", shape = "box"];
+34[label = "StorageUnionStep: REGION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "purple", shape = "box"];
+35[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nR_REGIONKEY\nR_NAME (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "brown", shape = "box"];
+36[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "green", shape = "box"];
+37[label = "StorageUnionStep: ORDERS_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "purple", shape = "box"];
+38[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  orders.O_CUSTKEY<==>customer.C_CUSTKEY\nSIPExpr Ids: 7\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+39[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+40[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nstartEpoch 0\nendEpoch 151\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+41[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "green", shape = "box"];
+42[label = "StorageUnionStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "purple", shape = "box"];
+43[label = "ScanStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nC_CUSTKEY\nC_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "V[0] S=0, D=0",color = "black"];
+1->0 [label = "V[0] S=1, D=1",color = "black"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->18 [label = "0",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->20 [label = "1",color = "blue"];
+24->23 [label = "0",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->25 [label = "1",color = "blue"];
+29->28 [label = "0",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->31 [label = "0",color = "blue"];
+33->30 [label = "1",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->18 [label = "1",color = "blue"];
+37->36 [label = "0",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+40->39 [label = "0",color = "blue"];
+41->38 [label = "1",color = "blue"];
+42->41 [label = "0",color = "blue"];
+43->42 [label = "0",color = "blue"];
+}
+Estimated resources for plan:
+-----------------------------
+Scratch Memory MB: 1815
+File Handles:      81
+Worker Threads:    40
+Blocking Threads:  13
+Externalizing Ops: 4
+Unbounded Mem Ops: 5
+Max Threads:     2
+
+Extra Memory Reservation MB 953
+-----------------------------
+----------------------------------------------- 
+PLAN:  INITIATOR NODE  (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = " INITIATOR NODE \n", labelloc=t, labeljust=l ordering=out]
+0[label = "Root \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "house"];
+1[label = "NewEENode \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "box"];
+2[label = "TopK[PIPELINED]\n Sort: (keys = )\nLIMIT: 1\nOffset: 0\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: \<SVAR\>[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  nation.N_NAME\n  \<SVAR\>\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: \<SVAR\>[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+4[label = "Recv(keys = D,N)\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+5[label = "Send\nSend to: v_verticadb_node0001(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+6[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+7[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]", color = "green", shape = "box"];
+8[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+9[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+10[label = "ParallelUnionStep: \nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+11[label = "Recv\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+12[label = "Send\nSend to: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\nResegment\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+13[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+14[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+15[label = "StorageUnionStep: LINEITEM_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "purple", shape = "box"];
+16[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+17[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+18[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_OUTER_JK_SORTED][JF_INNER_JK_SORTED]\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n  lineitem.L_ORDERKEY<==>orders.O_ORDERKEY\n  supplier.S_NATIONKEY<==>customer.C_NATIONKEY\nSIPExpr Ids: 1,2,3\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: orders.O_CUSTKEY[2,2] - Integer(8)\nUnc: L_EXTENDEDPRICE[3,6] - Numeric(15,2)\nUnc: L_DISCOUNT[3,7] - Numeric(15,2)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+20[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  lineitem.L_SUPPKEY<==>supplier.S_SUPPKEY\nSIPExpr Ids: 4\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+21[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+22[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+23[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+24[label = "StorageUnionStep: SUPPLIER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+25[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  supplier.S_NATIONKEY<==>nation.N_NATIONKEY\nSIPExpr Ids: 5\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+26[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+27[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+28[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+29[label = "StorageUnionStep: NATION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+30[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  nation.N_REGIONKEY<==>region.R_REGIONKEY\nSIPExpr Ids: 6\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+31[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+32[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+33[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "green", shape = "box"];
+34[label = "StorageUnionStep: REGION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "purple", shape = "box"];
+35[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nR_REGIONKEY\nR_NAME (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "brown", shape = "box"];
+36[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "green", shape = "box"];
+37[label = "StorageUnionStep: ORDERS_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "purple", shape = "box"];
+38[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  orders.O_CUSTKEY<==>customer.C_CUSTKEY\nSIPExpr Ids: 7\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+39[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+40[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nstartEpoch 0\nendEpoch 151\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+41[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "green", shape = "box"];
+42[label = "StorageUnionStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "purple", shape = "box"];
+43[label = "ScanStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nC_CUSTKEY\nC_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "V[0] S=0, D=0",color = "black"];
+1->0 [label = "V[0] S=1, D=1",color = "black"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->18 [label = "0",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->20 [label = "1",color = "blue"];
+24->23 [label = "0",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->25 [label = "1",color = "blue"];
+29->28 [label = "0",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->31 [label = "0",color = "blue"];
+33->30 [label = "1",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->18 [label = "1",color = "blue"];
+37->36 [label = "0",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+40->39 [label = "0",color = "blue"];
+41->38 [label = "1",color = "blue"];
+42->41 [label = "0",color = "blue"];
+43->42 [label = "0",color = "blue"];
+}
+Estimated resources for plan:
+-----------------------------
+Scratch Memory MB: 1815
+File Handles:      81
+Worker Threads:    40
+Blocking Threads:  13
+Externalizing Ops: 4
+Unbounded Mem Ops: 5
+Max Threads:     2
+
+Extra Memory Reservation MB 953
+-----------------------------
+----------------------------------------------- 
+PLAN:  EXECUTOR NODE v_verticadb_node0002  (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = " EXECUTOR NODE v_verticadb_node0002 \n", labelloc=t, labeljust=l ordering=out]
+0[label = "NewEENode \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "box"];
+1[label = "Send\nSend to: v_verticadb_node0001(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+2[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]", color = "green", shape = "box"];
+4[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+5[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+6[label = "ParallelUnionStep: \nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+7[label = "Recv\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+8[label = "Send\nSend to: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\nResegment\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+9[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+10[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+11[label = "StorageUnionStep: LINEITEM_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "purple", shape = "box"];
+12[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+13[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+14[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_OUTER_JK_SORTED][JF_INNER_JK_SORTED]\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n  lineitem.L_ORDERKEY<==>orders.O_ORDERKEY\n  supplier.S_NATIONKEY<==>customer.C_NATIONKEY\nSIPExpr Ids: 1,2,3\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: orders.O_CUSTKEY[2,2] - Integer(8)\nUnc: L_EXTENDEDPRICE[3,6] - Numeric(15,2)\nUnc: L_DISCOUNT[3,7] - Numeric(15,2)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+15[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+16[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  lineitem.L_SUPPKEY<==>supplier.S_SUPPKEY\nSIPExpr Ids: 4\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+17[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+18[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+20[label = "StorageUnionStep: SUPPLIER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+21[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  supplier.S_NATIONKEY<==>nation.N_NATIONKEY\nSIPExpr Ids: 5\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+22[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+23[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+24[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+25[label = "StorageUnionStep: NATION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+26[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  nation.N_REGIONKEY<==>region.R_REGIONKEY\nSIPExpr Ids: 6\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+27[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+28[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+29[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "green", shape = "box"];
+30[label = "StorageUnionStep: REGION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "purple", shape = "box"];
+31[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nR_REGIONKEY\nR_NAME (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "brown", shape = "box"];
+32[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "green", shape = "box"];
+33[label = "StorageUnionStep: ORDERS_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "purple", shape = "box"];
+34[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  orders.O_CUSTKEY<==>customer.C_CUSTKEY\nSIPExpr Ids: 7\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+35[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+36[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nstartEpoch 0\nendEpoch 151\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+37[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "green", shape = "box"];
+38[label = "StorageUnionStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "purple", shape = "box"];
+39[label = "ScanStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nC_CUSTKEY\nC_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "0",color = "blue"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->16 [label = "1",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->22 [label = "0",color = "blue"];
+24->21 [label = "1",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->27 [label = "0",color = "blue"];
+29->26 [label = "1",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->14 [label = "1",color = "blue"];
+33->32 [label = "0",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->35 [label = "0",color = "blue"];
+37->34 [label = "1",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+}
+Estimated resources for plan:
+-----------------------------
+Scratch Memory MB: 1815
+File Handles:      77
+Worker Threads:    40
+Blocking Threads:  9
+Externalizing Ops: 4
+Unbounded Mem Ops: 5
+Max Threads:     2
+
+Extra Memory Reservation MB 956
+-----------------------------
+----------------------------------------------- 
+PLAN:  EXECUTOR NODE v_verticadb_node0003  (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = " EXECUTOR NODE v_verticadb_node0003 \n", labelloc=t, labeljust=l ordering=out]
+0[label = "NewEENode \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "box"];
+1[label = "Send\nSend to: v_verticadb_node0001(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+2[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]", color = "green", shape = "box"];
+4[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+5[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+6[label = "ParallelUnionStep: \nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+7[label = "Recv\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+8[label = "Send\nSend to: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\nResegment\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+9[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+10[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+11[label = "StorageUnionStep: LINEITEM_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "purple", shape = "box"];
+12[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+13[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+14[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_OUTER_JK_SORTED][JF_INNER_JK_SORTED]\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n  lineitem.L_ORDERKEY<==>orders.O_ORDERKEY\n  supplier.S_NATIONKEY<==>customer.C_NATIONKEY\nSIPExpr Ids: 1,2,3\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: orders.O_CUSTKEY[2,2] - Integer(8)\nUnc: L_EXTENDEDPRICE[3,6] - Numeric(15,2)\nUnc: L_DISCOUNT[3,7] - Numeric(15,2)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+15[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+16[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  lineitem.L_SUPPKEY<==>supplier.S_SUPPKEY\nSIPExpr Ids: 4\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+17[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+18[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+20[label = "StorageUnionStep: SUPPLIER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+21[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  supplier.S_NATIONKEY<==>nation.N_NATIONKEY\nSIPExpr Ids: 5\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+22[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+23[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+24[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+25[label = "StorageUnionStep: NATION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+26[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  nation.N_REGIONKEY<==>region.R_REGIONKEY\nSIPExpr Ids: 6\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+27[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+28[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+29[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "green", shape = "box"];
+30[label = "StorageUnionStep: REGION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "purple", shape = "box"];
+31[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nR_REGIONKEY\nR_NAME (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "brown", shape = "box"];
+32[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "green", shape = "box"];
+33[label = "StorageUnionStep: ORDERS_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "purple", shape = "box"];
+34[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  orders.O_CUSTKEY<==>customer.C_CUSTKEY\nSIPExpr Ids: 7\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+35[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+36[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nstartEpoch 0\nendEpoch 151\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+37[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "green", shape = "box"];
+38[label = "StorageUnionStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "purple", shape = "box"];
+39[label = "ScanStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nC_CUSTKEY\nC_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "0",color = "blue"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->16 [label = "1",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->22 [label = "0",color = "blue"];
+24->21 [label = "1",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->27 [label = "0",color = "blue"];
+29->26 [label = "1",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->14 [label = "1",color = "blue"];
+33->32 [label = "0",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->35 [label = "0",color = "blue"];
+37->34 [label = "1",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+}
+Estimated resources for plan:
+-----------------------------
+Scratch Memory MB: 1815
+File Handles:      77
+Worker Threads:    40
+Blocking Threads:  9
+Externalizing Ops: 4
+Unbounded Mem Ops: 5
+Max Threads:     2
+
+Extra Memory Reservation MB 956
+-----------------------------
+----------------------------------------------- 
+PLAN:  EXECUTOR NODE v_verticadb_node0004  (GraphViz Format)
+----------------------------------------------- 
+digraph G {
+graph [rankdir=BT, label = " EXECUTOR NODE v_verticadb_node0004 \n", labelloc=t, labeljust=l ordering=out]
+0[label = "NewEENode \nOutBlk=[UncTuple<char(25).25, numeric(35,4).16>]\nNode Set: [Name: v_verticadb_node0001 , index: 0 , (initiator))]\nNode ID: 0", color = "green", shape = "box"];
+1[label = "Send\nSend to: v_verticadb_node0001(:0)\nNet id: 1001\nBufferSize: 65000\nMerge\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+2[label = "TopK[HEAP]\n Sort: (keys = D,N)\nLIMIT: 1\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: revenue[100,-3] - Numeric(35,4)\nUnc: n_name[5,2] - Char(25)", color = "green", shape = "box"];
+3[label = "ExprEval: \n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\n  nation.N_NAME\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]", color = "green", shape = "box"];
+4[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+5[label = "GroupByHash(Spill): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+6[label = "ParallelUnionStep: \nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+7[label = "Recv\nRecv from: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+8[label = "Send\nSend to: v_verticadb_node0001(:0),v_verticadb_node0002(:0),v_verticadb_node0003(:0),v_verticadb_node0004(:0)\nNet id: 1000\nBufferSize: 65000\nResegment\n\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+9[label = "ParallelUnionStep: \nthreads 2\nCombine\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+10[label = "GroupByHash: 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "green", shape = "box"];
+11[label = "StorageUnionStep: LINEITEM_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nLocally Resegment By: ((100 \<*\> 69069) \<+\> internal_strhash(nation.N_NAME))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "purple", shape = "box"];
+12[label = "GroupByPipe(HashPrepass): 1 keys\nAggs:\n  sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+13[label = "ExprEval: \n  nation.N_NAME\n  (lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT))\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: sum((lineitem.L_EXTENDEDPRICE * (1 - lineitem.L_DISCOUNT)))[100,-3] - Numeric(35,4)", color = "brown", shape = "box"];
+14[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.ORDERS) using previous join and previous join (PATH ID: 3)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_OUTER_JK_SORTED][JF_INNER_JK_SORTED]\n (lineitem.L_ORDERKEY = orders.O_ORDERKEY)\n (customer.C_NATIONKEY = supplier.S_NATIONKEY)\n  lineitem.L_ORDERKEY<==>orders.O_ORDERKEY\n  supplier.S_NATIONKEY<==>customer.C_NATIONKEY\nSIPExpr Ids: 1,2,3\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: orders.O_CUSTKEY[2,2] - Integer(8)\nUnc: L_EXTENDEDPRICE[3,6] - Numeric(15,2)\nUnc: L_DISCOUNT[3,7] - Numeric(15,2)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+15[label = "FilterStep: \n(lineitem.L_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+16[label = "Join: Hash-Join: \n(tpch_10g.LINEITEM x tpch_10g.SUPPLIER) using LINEITEM_b0 and previous join (PATH ID: 4)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  lineitem.L_SUPPKEY<==>supplier.S_SUPPKEY\nSIPExpr Ids: 4\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_ORDERKEY[3,1] - Integer(8)\nUnc: supplier.S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+17[label = "FilterStep: \n(lineitem.L_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+18[label = "ScanStep: LINEITEM_b0\nSIP4(HashJoin): lineitem.L_SUPPKEY\nSIP1(HashJoin): lineitem.L_ORDERKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nL_ORDERKEY (not emitted)\nL_SUPPKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: L_SUPPKEY[3,3] - Integer(8)", color = "brown", shape = "box"];
+19[label = "FilterStep: \n(supplier.S_SUPPKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+20[label = "StorageUnionStep: SUPPLIER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+21[label = "Join: Hash-Join: \n(tpch_10g.SUPPLIER x tpch_10g.NATION) using SUPPLIER_super and previous join (PATH ID: 6)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  supplier.S_NATIONKEY<==>nation.N_NATIONKEY\nSIPExpr Ids: 5\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_SUPPKEY[4,1] - Integer(8)\nUnc: S_NATIONKEY[4,4] - Integer(8)\nUnc: nation.N_NAME[5,2] - Char(25)\nUnc: nation.N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+22[label = "FilterStep: \n(supplier.S_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+23[label = "ScanStep: SUPPLIER_super\nSIP5(HashJoin): supplier.S_NATIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nS_SUPPKEY (not emitted)\nS_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: S_NATIONKEY[4,4] - Integer(8)", color = "brown", shape = "box"];
+24[label = "FilterStep: \n(nation.N_NATIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "green", shape = "box"];
+25[label = "StorageUnionStep: NATION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "purple", shape = "box"];
+26[label = "Join: Hash-Join: \n(tpch_10g.NATION x tpch_10g.REGION) using NATION_super and REGION_super (PATH ID: 8)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  nation.N_REGIONKEY<==>region.R_REGIONKEY\nSIPExpr Ids: 6\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_NATIONKEY[5,1] - Integer(8)\nUnc: N_NAME[5,2] - Char(25)\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+27[label = "FilterStep: \n(nation.N_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+28[label = "ScanStep: NATION_super\nSIP6(HashJoin): nation.N_REGIONKEY\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nN_NATIONKEY (not emitted)\nN_REGIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: N_REGIONKEY[5,3] - Integer(8)", color = "brown", shape = "box"];
+29[label = "FilterStep: \n(region.R_REGIONKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "green", shape = "box"];
+30[label = "StorageUnionStep: REGION_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "purple", shape = "box"];
+31[label = "ScanStep: REGION_super\n(region.R_NAME = \'MIDDLE EAST\')\nVALINDEX[0]\nstartEpoch 0\nendEpoch 151\nR_REGIONKEY\nR_NAME (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: R_REGIONKEY[6,1] - Integer(8)", color = "brown", shape = "box"];
+32[label = "FilterStep: \n(orders.O_ORDERKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "green", shape = "box"];
+33[label = "StorageUnionStep: ORDERS_b0\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "purple", shape = "box"];
+34[label = "Join: Hash-Join: \n(tpch_10g.ORDERS x tpch_10g.CUSTOMER) using ORDERS_b0 and CUSTOMER_super (PATH ID: 11)\nflags: [JF_INNER_IS_UNIQUE][JF_PRESERVE_OUTER_INPUT_ORDER][JF_INNER_JK_SORTED]\n  orders.O_CUSTKEY<==>customer.C_CUSTKEY\nSIPExpr Ids: 7\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: customer.C_NATIONKEY[1,4] - Integer(8)\nUnc: O_ORDERKEY[2,1] - Integer(8)\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+35[label = "FilterStep: \n(orders.O_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+36[label = "ScanStep: ORDERS_b0\n((orders.O_ORDERDATE \>= \'1997-01-01\'::date) AND (orders.O_ORDERDATE \< \'1998-01-01 00:00:00\'::timestamp))\nSIP7(HashJoin): orders.O_CUSTKEY\nstartEpoch 0\nendEpoch 151\nO_CUSTKEY\nO_ORDERDATE (not emitted)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: O_CUSTKEY[2,2] - Integer(8)", color = "brown", shape = "box"];
+37[label = "FilterStep: \n(customer.C_CUSTKEY IS NOT NULL)\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "green", shape = "box"];
+38[label = "StorageUnionStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nthreads 2\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: UNSEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "purple", shape = "box"];
+39[label = "ScanStep: CUSTOMER_super\nstartEpoch 0\nendEpoch 151\nC_CUSTKEY\nC_NATIONKEY\nnodeSet: [0, 1, 2, 3] \n[Local Segmented Properties: SEGMENTED]\nUnc: C_CUSTKEY[1,1] - Integer(8)\nUnc: C_NATIONKEY[1,4] - Integer(8)", color = "brown", shape = "box"];
+1->0 [label = "0",color = "blue"];
+2->1 [label = "0",color = "blue"];
+3->2 [label = "0",color = "blue"];
+4->3 [label = "0",color = "blue"];
+5->4 [label = "0",color = "blue"];
+6->5 [label = "0",color = "blue"];
+7->6 [label = "0",color = "blue"];
+8->7 [label = "0",color = "blue"];
+9->8 [label = "0",color = "blue"];
+10->9 [label = "0",color = "blue"];
+11->10 [label = "0",color = "blue"];
+12->11 [label = "0",color = "blue"];
+13->12 [label = "0",color = "blue"];
+14->13 [label = "0",color = "blue"];
+15->14 [label = "0",color = "blue"];
+16->15 [label = "0",color = "blue"];
+17->16 [label = "0",color = "blue"];
+18->17 [label = "0",color = "blue"];
+19->16 [label = "1",color = "blue"];
+20->19 [label = "0",color = "blue"];
+21->20 [label = "0",color = "blue"];
+22->21 [label = "0",color = "blue"];
+23->22 [label = "0",color = "blue"];
+24->21 [label = "1",color = "blue"];
+25->24 [label = "0",color = "blue"];
+26->25 [label = "0",color = "blue"];
+27->26 [label = "0",color = "blue"];
+28->27 [label = "0",color = "blue"];
+29->26 [label = "1",color = "blue"];
+30->29 [label = "0",color = "blue"];
+31->30 [label = "0",color = "blue"];
+32->14 [label = "1",color = "blue"];
+33->32 [label = "0",color = "blue"];
+34->33 [label = "0",color = "blue"];
+35->34 [label = "0",color = "blue"];
+36->35 [label = "0",color = "blue"];
+37->34 [label = "1",color = "blue"];
+38->37 [label = "0",color = "blue"];
+39->38 [label = "0",color = "blue"];
+}
+Estimated resources for plan:
+-----------------------------
+Scratch Memory MB: 1815
+File Handles:      77
+Worker Threads:    40
+Blocking Threads:  9
+Externalizing Ops: 4
+Unbounded Mem Ops: 5
+Max Threads:     2
+
+Extra Memory Reservation MB 956
+-----------------------------

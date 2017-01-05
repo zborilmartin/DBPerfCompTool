@@ -319,16 +319,22 @@ class DBPerfComp(object):
                         mode_unparsed = confData['Conf']['mode']
                         self.mode = "".join(mode_unparsed)
 
-                        if self.mode.upper() not in ('COMPARE','CLONE','DESIGN','COMPARE-ALL'):
-                                self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,CLONE,DESIGN')
+                        if self.mode.upper() not in ('COMPARE','SCHEMA','DESIGN','COMPARE-ALL'):
+                                self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,SCHEMA,DESIGN')
                                 quit()
 
-                        source_unparsed = confData['Clone']['source']
-                        self.source = "".join(source_unparsed)
+                        name_unparsed = confData['Schema']['name']
+                        self.name = "".join(name_unparsed)
 
-                        target_unparsed = confData['Clone']['target']
-                        self.target = "".join(target_unparsed)
+                        data_path_unparsed = confData['Schema']['data_path']
+                        self.data_path = "".join(data_path_unparsed)
+
+                        schema_path_unparsed = confData['Schema']['schema_path']
+                        self.schema_path = "".join(schema_path_unparsed)
             
+                        copy_query_path_unparsed = confData['Schema']['copy_query_path']
+                        self.copy_query_path = "".join(copy_query_path_unparsed)
+
                         design_name_unparsed = confData['Design']['design_name']
                         self.design_name = "".join(design_name_unparsed)
                         
@@ -380,19 +386,20 @@ class DBPerfComp(object):
 		    	print "File was not loaded" 
 		    	exit() 
 
-	def clone(self,source,target):
-		cursor = self.conn.cursor()
-		# Extracting all table names of schema
-		cursor.execute("SELECT table_name FROM all_tables WHERE schema_name = '{0}'".format(source))
+	def createSchema(self,name,data,schema,copy_query):
+                cursor = self.conn.cursor()
+		# Loading query for profile output
+		statement = self.extract(schema)
+		cursor.execute("CREATE SCHEMA IF NOT EXISTS {0}".format(name))
 
-		# Loading data from database
-		rows = cursor.fetchall()
-		
-		cursor.execute("CREATE SCHEMA IF NOT EXISTS {0}".format(target))
-	
-		for row in rows:
-			cursor.execute("CREATE TABLE IF NOT EXISTS {0}.{1} AS (SELECT * FROM {2}.{3})".format(target,row[0],source,row[0]))
-		cursor.close()
+		statement = statement.replace("myschema", name)
+
+		cursor.execute(statement)
+
+                statement2 = self.extract(copy_query)
+                statement2 = statement2.replace("myschema", name)
+                statement2 = statement2.replace("mypath", data)
+                cursor.execute(statement2)
 
 	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,desing_queries,design_schema,design_schema_target):
 		self.logger.info('[Design] Deisng name: ' + design_name)
@@ -446,6 +453,10 @@ class DBPerfComp(object):
 		for query in self.queries:
 			self.logger.info('Query: %s' % query)
 		self.logger.info('Mode: %s' % self.mode)
+		self.logger.info('[CONFIG] Schema name: %s' % self.name)
+		self.logger.info('[CONFIG] Path of data to copy to database: %s' % self.data_path)
+		self.logger.info('[CONFIG] Path of schema to create: %s' % self.schema_path)
+		self.logger.info('[CONFIG] Path of copy query: %s' % self.copy_query_path)
 		if self.mode == 'COMPARE':
             		createExcelFile(self.testname, self.queries)
 			self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
@@ -453,8 +464,8 @@ class DBPerfComp(object):
                 if self.mode == 'COMPARE-ALL':
                         createExcelFile(self.testname, self.queries)
                         self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",1)
-		if self.mode == 'CLONE':
-			self.clone(self.source,self.target)
+		if self.mode == 'SCHEMA':
+			self.createSchema(self.name,self.data_path,self.schema_path,self.copy_query_path)
                 if self.mode == 'DESIGN':
                         self.createDesign(self.design_name, self.query_path, self.typeDesign, self.objective, self.deploy_path, self.deployment, self.tables,self.design_queries,self.design_schema,self.design_schema_target)
 
