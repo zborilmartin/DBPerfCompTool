@@ -77,12 +77,15 @@ class DBPerfComp(object):
 			end = row[8].find(') */')
 			label = row[8][start:end]		
 			row[8] = label
-            
+                # Creating new sheet in specific XLSX file 
+                duplicatePattern(schema,testname,listQueries,query)
+		# Loading profile path to Excel
+                loadProfilePath(schema,testname,rows,listQueries,query)            
             	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
 		
         	# sending data into the database
 		for row in rows:	
-			query = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}')" % tablename
+			query = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label,query) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}', %s)" % (tablename, query)
 			query = query.format(*row)
 			
 			self.logInfo(row,tablename,schema)
@@ -154,10 +157,10 @@ class DBPerfComp(object):
 			self.logger.info('[Execute Explain Profile] Query: ' + query)
             		# Setting path of the output for Explain
 			fileExplain = './ExplainProfile/{0}/Explain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
-
+			fileVerboseExplain = './ExplainProfile/{0}/VerboseExplain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
             		# The rest of this method is executed only if the statement is true
             		# Important assumption: if there is no Explain file, there is also no Explain Verbose file, Query Profile Plan in the database and EXCEL (XLSX) sheet in the Excel file (and vice versa)
-			if not os.path.exists(fileExplain):
+			if (not os.path.exists(fileExplain)) or (not os.path.exists(fileVerboseExplain)):
 				# Loading query from folder
 				statement = self.extract(query)
                 
@@ -391,15 +394,15 @@ class DBPerfComp(object):
 		# Loading query for profile output
 		statement = self.extract(schema)
 		cursor.execute("CREATE SCHEMA IF NOT EXISTS {0}".format(name))
-
 		statement = statement.replace("myschema", name)
-
+		self.logger.info('[SCHEMA] CREATE SCHEMA QUERY: ' + statement)
 		cursor.execute(statement)
-
+		
                 statement2 = self.extract(copy_query)
                 statement2 = statement2.replace("myschema", name)
                 statement2 = statement2.replace("mypath", data)
-                cursor.execute(statement2)
+                self.logger.info('[SCHEMA] COPY DATA QUERY: ' + statement2)
+		cursor.execute(statement2)
 
 	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,desing_queries,design_schema,design_schema_target):
 		self.logger.info('[Design] Deisng name: ' + design_name)
@@ -457,16 +460,16 @@ class DBPerfComp(object):
 		self.logger.info('[CONFIG] Path of data to copy to database: %s' % self.data_path)
 		self.logger.info('[CONFIG] Path of schema to create: %s' % self.schema_path)
 		self.logger.info('[CONFIG] Path of copy query: %s' % self.copy_query_path)
-		if self.mode == 'COMPARE':
+		if self.mode.upper() == 'COMPARE':
             		createExcelFile(self.testname, self.queries)
 			self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
            		self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
-                if self.mode == 'COMPARE-ALL':
+                if self.mode.upper() == 'COMPARE-ALL':
                         createExcelFile(self.testname, self.queries)
                         self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",1)
-		if self.mode == 'SCHEMA':
+		if self.mode.upper() == 'SCHEMA':
 			self.createSchema(self.name,self.data_path,self.schema_path,self.copy_query_path)
-                if self.mode == 'DESIGN':
+                if self.mode.upper() == 'DESIGN':
                         self.createDesign(self.design_name, self.query_path, self.typeDesign, self.objective, self.deploy_path, self.deployment, self.tables,self.design_queries,self.design_schema,self.design_schema_target)
 
 

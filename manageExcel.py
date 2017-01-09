@@ -295,14 +295,14 @@ def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):
 # Particular step: duplicate Pattern sheet and fill Schema name
 def duplicatePattern(schema,testname,queries,query,tpch=0):
     wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
-    ws = wb["DBD"]
-    wsAll = wb["DBD-ALL"]
-    overview = wb["Overview"]
-    pattern = wb["Pattern"]
-    patternAll = wb["Pattern-ALL"]
-
     # Creating snew sheet
-    if schema not in wb.sheetnames:
+    if schema not in wb.get_sheet_names():
+        ws = wb["DBD"]
+        wsAll = wb["DBD-ALL"]
+        overview = wb["Overview"]
+        pattern = wb["Pattern"]
+        patternAll = wb["Pattern-ALL"]
+
         new = wb.copy_worksheet(pattern)
         new.cell(row=3, column=2, value=schema)
         new.title = schema

@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS TABLENAME (
         used_memory_kb NUMERIC(20,5),
         CPU_TIME BIGINT,
         label VARCHAR(100),
-	query_number INTEGER
+	query VARCHAR(100)
         );

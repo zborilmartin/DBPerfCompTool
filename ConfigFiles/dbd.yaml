@@ -1,12 +1,12 @@
 Conf: 
     testName: test
     queries: 1 4 5
-    schemas: tpch_10g
-    iteration: 8
-    mode: SCHEMA
+    schemas: schema1 tpch_1g DBD
+    iteration: 2
+    mode: compare
 Schema:
-    name: design1
-    data_path: /mnt/ebs/vertica/tpch/10g
+    name: schema1
+    data_path: /mnt/ebs/vertica/tpch/1g
     schema_path: tpch-data-model-vertica_customized
     copy_query_path: copy_tpch_data 
 Design:
