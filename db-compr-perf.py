@@ -3,6 +3,7 @@ import pyodbc
 import re
 import os
 import yaml
+import time
 import argparse
 import logging
 from sys import exit
@@ -31,8 +32,16 @@ class DBPerfComp(object):
 	# Extracting query from specific file
 	def extract(self,queryName):
 		# Queries must be stored in folder 'queries'
-		sqlFile = open('queries/%s.sql' % queryName);
+		if (len(str(queryName)) < 4) or (str(queryName)[-4:] != '.sql'):
+			queryName = str(queryName) + '.sql'
+
+		if str(queryName)[0] == '/':
+			sqlFile = open('%s' % queryName);
+		else:
+			sqlFile = open('queries/%s' % queryName);
 		
+		self.logger.info('[EXTRACT QUERY] Query path or file in "queries" file: ' + queryName)
+
 		# All lines are stored in list
 		bffr = []		
 		for line in sqlFile:
@@ -44,24 +53,24 @@ class DBPerfComp(object):
 
     
     	# Printing info about one row of output table
-	def logInfo(self,row,tablename,testname):
-		self.logger.info("TABLE NAME: " + tablename)
-		self.logger.info("Test: " + testname)
-		self.logger.info( "Label: " + row[8])
-		self.logger.info("Schema: " + row[0])
-		self.logger.info("Timestamp: " + str(row[1]))
-		self.logger.info("Transacton: " + str(row[2]))
-		self.logger.info("Statement: " + str(row[3]))
-		self.logger.info("Query duration (us): " + str(row[4]))
-		self.logger.info("Resource request execution (ms): " + str(row[5]))
-		self.logger.info("Used memory (kb): " + str(row[6]))
-		self.logger.info("CPU_TIME: " + str(row[7]))	
+	def logInfo(self,row,tablename,testname,query):
+		self.logger.info("[MONITORING QUERY] TABLE NAME: " + tablename)
+		self.logger.info("[MONITORING QUERY] Test: " + testname)
+		self.logger.info( "[MONITORING QUERY] Label: " + row[8])
+		self.logger.info("[MONITORING QUERY] Schema: " + row[0])
+		self.logger.info("[MONITORING QUERY] Timestamp: " + str(row[1]))
+		self.logger.info("[MONITORING QUERY] Transaction: " + str(row[2]))
+		self.logger.info("[MONITORING QUERY] Query: " + query)
+		self.logger.info("[MONITORING QUERY] Query duration (us): " + str(row[4]))
+		self.logger.info("[MONITORING QUERY] Resource request execution (ms): " + str(row[5]))
+		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[6]))
+		self.logger.info("[MONITORING QUERY] CPU_TIME: " + str(row[7]))	
 
             
 	# Method for sending data into the database
     	# calling method loadDataToExcel - loading data from monitoring into excel file
 	def monitor(self, length, tablename, testname,schema,query,listQueries,tpch=0):
-		self.logger.info('Monitor')
+		self.logger.info('Query monitoring started')
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
@@ -85,12 +94,12 @@ class DBPerfComp(object):
 		
         	# sending data into the database
 		for row in rows:	
-			query = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label,query) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}', %s)" % (tablename, query)
-			query = query.format(*row)
+			query_statement = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label,query) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}', %s)" % (tablename, query)
+			query_statement = query_statement.format(*row)
+			#self.logger.info('[MONITORING QUERY] Monitoring query statement: ' + query_statement)
+			self.logInfo(row,tablename,schema,query)
 			
-			self.logInfo(row,tablename,schema)
-			
-			cursor.execute(query)
+			cursor.execute(query_statement)
 			cursor.commit() 
 		cursor.close()
 
@@ -98,27 +107,34 @@ class DBPerfComp(object):
 	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname,tpch=0):
 		self.logger.info('Execute test')
                 for query in listQueries:
-			self.logger.info('[Execute test] Query: ' + query)
+			self.logger.info('[EXECUTE TEST] Query: ' + query)
 			# For each iteration which is given in Config file
                 	for i in range(0,iteration):
+				self.logger.info('[EXECUTE TEST] Iteration n.: ' + str(i+1))
 				if tpch == 0:
 	                                # Loading query from folder
 	                                statement = self.extract(query)
 					# Executing given query
+					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
-				else:
-					for i in range(1,23):
-						statement = self.extract(i)
-						cursor.execute(statement)
-				# Loading data from database
-				rows = cursor.fetchall()
-				# Monitoring data    
-				if tpch == 0:
+					#rows = cursor.fetchall()
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
-					for j in range (1,23):
+					for j in range(1,23):
+						self.logger.info('[EXECUTE TEST] [ALL - TPC-H queries mode] Query n.: ' + str(j) + ' (iteration n.: ' + str(i+1) + ')')
+						statement = self.extract(j)
+						#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+						cursor.execute(statement)
+						time.sleep(2)
+						if j in [2,6,11,12,14,15,19,22]:
+                                                        time.sleep(30)
+					for j in range(1,23):
+						#time.sleep(3)
+						#rows = cursor.fetchall()		
+					#	if j in [2,6,11,12,14,15,19,22]:
+					#		time.sleep(30)
 						schema_tmp = schema + '-ALL'
-						self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
+                                                self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema):
 		
@@ -267,7 +283,6 @@ class DBPerfComp(object):
 			# Setting search path to this schema
 			# Others schemas are out of quering -> in query, there is no FROM <schema_name>.TABLE -> we eliminate it setting searching path
 			schema_statement = "set search_path to \"$user\", public, v_catalog, v_monitor, v_internal, %s" % schema
-			# print schema_statement
 		    
 			# Executing SEARCH PATH query
 			cursor.execute(schema_statement)
@@ -303,28 +318,31 @@ class DBPerfComp(object):
 			if not confData:
 				raise Exception('Data not loaded')
 			# Setting variables querise, testname, iteration, schemas
-			queries_unparsed = confData['Conf']['queries']
+			queries_unparsed = confData['Compare']['queries']
 			if type(queries_unparsed) is int:                            
                     		self.queries = [str(queries_unparsed)]                
             		else:                    
  	                	queries_unparsed2 = "".join(queries_unparsed)
 			        self.queries = queries_unparsed2.split()
 	
-	     	        testname_unparsed = confData['Conf']['testName']
+	     	        testname_unparsed = confData['Compare']['testName']
 			self.testname = "".join(testname_unparsed)
 
-			self.iteration = confData['Conf']['iteration']
+			self.iteration = confData['Compare']['iteration']
 
-			schemas_unparsed = confData['Conf']['schemas']
+			schemas_unparsed = confData['Compare']['schemas']
 			schemas_unparsed2 = "".join(schemas_unparsed)
 			self.schemas = schemas_unparsed2.split()
 
                         mode_unparsed = confData['Conf']['mode']
-                        self.mode = "".join(mode_unparsed)
+                        self.modes = []
+                        mode_unparsed2 = "".join(mode_unparsed)
+                        self.modes = mode_unparsed2.split()
 
-                        if self.mode.upper() not in ('COMPARE','SCHEMA','DESIGN','COMPARE-ALL'):
-                                self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,SCHEMA,DESIGN')
-                                quit()
+			for mode in self.modes:
+				if mode.upper() not in ('COMPARE','SCHEMA','DESIGN','COMPARE-ALL','DEPLOYMENT'):
+					self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,SCHEMA,DESIGN,DEPLOYMENT')
+					quit()
 
                         name_unparsed = confData['Schema']['name']
                         self.name = "".join(name_unparsed)
@@ -370,9 +388,6 @@ class DBPerfComp(object):
                         design_schema_unparsed= confData['Design']['design_schema']
                         self.design_schema = "".join(design_schema_unparsed)    
                         
-                        design_schema_target_unparsed = confData['Design']['design_schema_target']
-                        self.design_schema_target = "".join(design_schema_target_unparsed) 
-
                         design_queries_unparsed = confData['Design']['queries']
                         self.design_queries = []
 			if type(design_queries_unparsed) is int:
@@ -385,6 +400,17 @@ class DBPerfComp(object):
                         tables_unparsed2 = "".join(tables_unparsed)
                         self.tables = tables_unparsed2.split()
 
+                        query_deployment_path_unparsed = confData['Deployment']['query_deployment_path']
+                        self.query_deployment_path = "".join(query_deployment_path_unparsed)
+
+                        self.previous_schema_occurs = confData['Deployment']['previous_schema_occurs']
+
+                        actual_schema_name_unparsed= confData['Deployment']['actual_schema_name']
+                        self.actual_schema_name = "".join(actual_schema_name_unparsed)
+
+                        previous_schema_name_unparsed= confData['Deployment']['previous_schema_name']
+                        self.previous_schema_name = "".join(previous_schema_name_unparsed)		
+
 		except IOError as e:
 		    	print "File was not loaded" 
 		    	exit() 
@@ -395,83 +421,124 @@ class DBPerfComp(object):
 		statement = self.extract(schema)
 		cursor.execute("CREATE SCHEMA IF NOT EXISTS {0}".format(name))
 		statement = statement.replace("myschema", name)
-		self.logger.info('[SCHEMA] CREATE SCHEMA QUERY: ' + statement)
+		self.logger.info('[SCHEMA] CREATE SCHEMA QUERY \n: ' + statement)
 		cursor.execute(statement)
-		
+		self.logger.info('[SCHEMA] DONE - CREATE SCHEMA')
                 statement2 = self.extract(copy_query)
                 statement2 = statement2.replace("myschema", name)
                 statement2 = statement2.replace("mypath", data)
-                self.logger.info('[SCHEMA] COPY DATA QUERY: ' + statement2)
+                self.logger.info('[SCHEMA] COPY DATA QUERY \n: ' + statement2)
 		cursor.execute(statement2)
+		self.logger.info('[SCHEMA] DONE - COPY DATA')
 
-	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,desing_queries,design_schema,design_schema_target):
-		self.logger.info('[Design] Deisng name: ' + design_name)
-		self.logger.info('[Design] Query path: ' +  query_path)
-		self.logger.info('[Design] Design type: ' + typeDesign)
-		self.logger.info('[Design] Objective: ' +  objective)
-		self.logger.info('[Design] Deploy path: ' + deploy_path)
-		self.logger.info('[Design] Deployment - 0[false] x 1[true]: ' + str(deployment))
-		for table in tables:
-			self.logger.info('Table: ' + table)
-		for query in desing_queries:
-			self.logger.info('Query: ' + query)
-		self.logger.info('[Design] Design schema: ' + design_schema)
-		self.logger.info('[Design] Design_schema_target: '+  design_schema_target)
-
-		schema = ""
-
-		if design_schema != design_schema_target:
-			self.clone(design_schema,design_schema_target)
-			schema = design_schema_target
-		else:
-			schema = design_schema	
+	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,desing_queries,schema):
                 cursor = self.conn.cursor()
 		try:
 			cursor.execute("SELECT DESIGNER_DROP_DESIGN('{0}')").format(design_name)   
+			time.sleep(5)
+			self.logger.info('[DESIGN] Desing ' + design_name + ' was dropped')
 		except Exception as e:
-			self.logger.info('[Design] Desing did not exist before')
+			try:
+				cursor.execute("select dbd_drop_all_workspaces('DESIGNER')")
+			except Exception as e:
+				self.logger.info('[DESIGN] Desing did not exist before')
 		# Extracting all table names of schema
 		cursor.execute("SELECT DESIGNER_CREATE_DESIGN('{0}')".format(design_name))
+		self.logger.info('[DESIGN] SELECT DESIGNER_CREATE_DESIGN: ' + design_name )
 		for table in tables:
 			cursor.execute("SELECT DESIGNER_ADD_DESIGN_TABLES('{0}','{1}.{2}')".format(design_name,schema,table))
+			self.logger.info('[DESIGN] DESIGNER_ADD_DESIGN_TABLES: ' + table)
 		for query in query:
 			cursor.execute("SELECT DESIGNER_ADD_DESIGN_QUERIES('{0}', '{1}/{2}.sql','true')".format(design_name,query_path,query))
+			self.logger.info('[DESIGN] DESIGNER_ADD_DESIGN_QUERIES: ' + str(query))
 		cursor.execute("SELECT DESIGNER_SET_DESIGN_TYPE('{0}', '{1}')".format(design_name,typeDesign))
+		self.logger.info('[DESIGN] DESIGNER_SET_DESIGN_TYPE: ' + typeDesign)
 		cursor.execute("SELECT DESIGNER_SET_OPTIMIZATION_OBJECTIVE('{0}', '{1}')".format(design_name,objective))
+		self.logger.info('[DESIGN] DESIGNER_SET_OPTIMIZATION_OBJECTIVE: ' + objective)
 		cursor.execute("SELECT DESIGNER_RUN_POPULATE_DESIGN_AND_DEPLOY ('{0}', '{1}/{2}_projections.sql', '{3}/{4}_deploy.sql', true, {5}, true, true)".format(design_name,deploy_path,design_name,deploy_path,design_name,deployment))
+		self.logger.info('[DESIGN] DESIGNER_RUN_POPULATE_DESIGN_AND_DEPLOY: path = ' + deploy_path)
+		self.logger.info('[DESIGN] Desing created')
 
+	def deploy(self,query_deployment_path,previous_schema_occurs,actual_schema_name,previous_schema_name):
+		cursor = self.conn.cursor()
+
+		# Extracting deployment query
+		statement = self.extract(query_deployment_path)
+
+		# If 1 - replacing old schema name with new schema name in query 
+		if previous_schema_occurs == 1:
+	                statement = statement.replace(previous_schema_name, actual_schema_name)
+			self.logger.info('[CONFIG-DEPLOYMENT] Previous schema name: ' + previous_schema_name)
+
+		# Old projections will be dropped in other step
+		statement = statement.replace('DROP', '--DROP')
+		cursor.execute(statement)
+		self.logger.info('[DEPLOYMENT] Query executed')
+	
+		# Selecting old projection names 
+		cursor.execute("select projection_name from projections where projection_schema ILIKE '{0}' and projection_name NOT ILIKE '%{1}%'".format(actual_schema_name,actual_schema_name))
+		rows = cursor.fetchall()
+
+		# For each projection perform dropping
+		for row in rows:
+			try:
+				cursor.execute('DROP PROJECTION {0}.{1} CASCADE'.format(actual_schema_name,row[0]))	
+				self.logger.info('[DEPLOYMENT] Dropping projection ' + row[0])
+			# If dropping is not successful the user is asked to manual drop
+			except Exception as e:
+				self.logger.info('[DEPLOYMENT] Projection ' + row[0] + ' was NOT dropped. Please drop it manually!')
 
 	def main(self):
 		logging.basicConfig(level=logging.INFO)
 		self.logger = logging.getLogger("DBD_Comp_Perf_Tool")
-
+		
+		# Parsing arguments
 		self.parserYAML(self.confFile)
-		self.logger.info('Arguments parsed')		
-		self.logger.info('Testname: %s' % self.testname)
-		self.logger.info('Iteration: %s' % self.iteration)
-		self.logger.info('Number of schemas: %s' % len(self.schemas))
-		for schema in self.schemas:
-			self.logger.info('Schema: %s' % schema)
-		self.logger.info('Number of queries: %s' % len(self.queries))	
-		for query in self.queries:
-			self.logger.info('Query: %s' % query)
-		self.logger.info('Mode: %s' % self.mode)
-		self.logger.info('[CONFIG] Schema name: %s' % self.name)
-		self.logger.info('[CONFIG] Path of data to copy to database: %s' % self.data_path)
-		self.logger.info('[CONFIG] Path of schema to create: %s' % self.schema_path)
-		self.logger.info('[CONFIG] Path of copy query: %s' % self.copy_query_path)
-		if self.mode.upper() == 'COMPARE':
-            		createExcelFile(self.testname, self.queries)
-			self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
-           		self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
-                if self.mode.upper() == 'COMPARE-ALL':
-                        createExcelFile(self.testname, self.queries)
-                        self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",1)
-		if self.mode.upper() == 'SCHEMA':
-			self.createSchema(self.name,self.data_path,self.schema_path,self.copy_query_path)
-                if self.mode.upper() == 'DESIGN':
-                        self.createDesign(self.design_name, self.query_path, self.typeDesign, self.objective, self.deploy_path, self.deployment, self.tables,self.design_queries,self.design_schema,self.design_schema_target)
+	
+		# Tool may be executed in several MODES
+		for mode in self.modes:
+			self.logger.info('[CONFIG] Mode: %s' % mode)
+                        if mode.upper() == 'COMPARE' or mode.upper() == 'COMPARE-ALL':	
+				self.logger.info('[CONFIG-COMPARE] Testname: %s' % self.testname)
+				self.logger.info('[CONFIG-COMPARE] Iteration: %s' % self.iteration)
+				self.logger.info('[CONFIG-COMPARE] Number of schemas: %s' % len(self.schemas))
+				for schema in self.schemas:
+					self.logger.info('[CONFIG-COMPARE] Schema: %s' % schema)
+				self.logger.info('[CONFIG-COMPARE] Number of queries: %s' % len(self.queries))	
+				for query in self.queries:
+					self.logger.info('[CONFIG-COMPARE] Query: %s' % query)
+			if mode.upper() == 'COMPARE':
+					createExcelFile(self.testname, self.queries)
+				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
+				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
+			if mode.upper() == 'COMPARE-ALL':
+				createExcelFile(self.testname, self.queries)
+				self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",1)
+			if mode.upper() == 'SCHEMA':
+				self.logger.info('[CONFIG-SCHEMA] Schema name: %s' % self.name)
+				self.logger.info('[CONFIG-SCHEMA] Path of data to copy to database: %s' % self.data_path)
+				self.logger.info('[CONFIG-SCHEMA] Path of schema to create: %s' % self.schema_path)
+				self.logger.info('[CONFIG-SCHEMA] Path of copy query: %s' % self.copy_query_path)
+				self.createSchema(self.name,self.data_path,self.schema_path,self.copy_query_path)
+			if mode.upper() == 'DESIGN':
+				self.logger.info('[CONFIG-DESIGN] Deisng name: ' + self.design_name)
+				self.logger.info('[CONFIG-DESIGN] Query path: ' +  self.query_path)
+				self.logger.info('[CONFIG-DESIGN] Design type: ' + self.typeDesign)
+				self.logger.info('[CONFIG-DESIGN] Objective: ' +  self.objective)
+				self.logger.info('[CONFIG-DESIGN] Deploy path: ' + self.deploy_path)
+				self.logger.info('[CONFIG-DESIGN] Deployment - 1-true/0-false: ' + str(self.deployment))
+				for table in tables:
+					self.logger.info('[CONFIG-DESIGN] Table: ' + table)
+				for query in desing_queries:
+					self.logger.info('[CONFIG-DESIGN] Query: ' + query)
+				self.logger.info('[CONFIG-DESIGN] Design schema: ' + design_schema)
 
+				self.createDesign(self.design_name, self.query_path, self.typeDesign, self.objective, self.deploy_path, self.deployment, self.tables,self.design_queries,self.design_schema)
+			if mode.upper() == 'DEPLOYMENT':
+				self.logger.info('[CONFIG-DEPLOYMENT] Query path: ' + self.query_deployment_path)
+				self.logger.info('[CONFIG-DEPLOYMENT] Actual schema name: ' + self.actual_schema_name)
+				self.logger.info('[CONFIG-DEPLOYMENT] Previous schema occurs (1-true/0-false): ' + self.previous_schema_occurs)
+				self.deploy(self.query_deployment_path,self.previous_schema_occurs,self.actual_schema_name,self.previous_schema_name)
 
 	def __del__(self):
 		self.conn.close()

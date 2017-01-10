@@ -269,8 +269,6 @@ def loadDataToExcelToParticularTable(row,ws,start_column):
 			ws['{0}'.format(ws.cell(row=100+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
     		# other data type
 		else:   
-			print "i: " + str(i) 
-			print "Item: " + str(row[i])
 			ws['{0}'.format(ws.cell(row=100+ws.cell(row=99,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
     
 def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):
@@ -350,7 +348,8 @@ def duplicatePattern(schema,testname,queries,query,tpch=0):
 def loadProfilePath(schema,testname,rows,queries,query):
 	wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     	ws = wb[schema]
-	name = schema + '-ALL'	
+	#name = schema + '-ALL'	
+	name = schema
 	wsAll = wb[name]
 	start_column = 1
 	if len(queries) > 1:
@@ -363,6 +362,8 @@ def loadProfilePath(schema,testname,rows,queries,query):
 			ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
 			tmp_column += 1
 		tmp_row += 1
+	if schema[-4:] == '-ALL':
+		schema = schema[:-4]
 	fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}.txt'.format(testname,testname,schema)
 	sizeFile = open(fileSize, 'r+')	
 	for i in range(0,9):
