@@ -56,7 +56,7 @@ class DBPerfComp(object):
 	def logInfo(self,row,tablename,testname,query):
 		self.logger.info("[MONITORING QUERY] TABLE NAME: " + tablename)
 		self.logger.info("[MONITORING QUERY] Test: " + testname)
-		self.logger.info( "[MONITORING QUERY] Label: " + row[8])
+		self.logger.info("[MONITORING QUERY] Label: " + row[8])
 		self.logger.info("[MONITORING QUERY] Schema: " + row[0])
 		self.logger.info("[MONITORING QUERY] Timestamp: " + str(row[1]))
 		self.logger.info("[MONITORING QUERY] Transaction: " + str(row[2]))
@@ -129,14 +129,10 @@ class DBPerfComp(object):
 						if j in [2,6,11,12,14,15,19,22]:
                                                         time.sleep(30)
 					for j in range(1,23):
-						#time.sleep(3)
-						#rows = cursor.fetchall()		
-					#	if j in [2,6,11,12,14,15,19,22]:
-					#		time.sleep(30)
 						schema_tmp = schema + '-ALL'
                                                 self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
 
-	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema):
+	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
 		
 		if not os.path.exists('./ExplainProfile'):
 			os.makedirs('./ExplainProfile')
@@ -304,7 +300,7 @@ class DBPerfComp(object):
 				self.executeTest(iteration,listQueries,cursor,tablename,schema,testname,tpch)
 			
 			if output_schema == "monitoring_profiles":
-				self.executeExplainProfile(listQueries,cursor,tablename,schema,testname,output_schema)
+				self.executeExplainProfile(listQueries,cursor,tablename,schema,testname,output_schema,tpch)
                 cursor.close()
                 
     	def parserYAML(self, file):
@@ -508,7 +504,7 @@ class DBPerfComp(object):
 				for query in self.queries:
 					self.logger.info('[CONFIG-COMPARE] Query: %s' % query)
 			if mode.upper() == 'COMPARE':
-					createExcelFile(self.testname, self.queries)
+				createExcelFile(self.testname, self.queries)
 				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
 				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
 			if mode.upper() == 'COMPARE-ALL':
@@ -537,7 +533,7 @@ class DBPerfComp(object):
 			if mode.upper() == 'DEPLOYMENT':
 				self.logger.info('[CONFIG-DEPLOYMENT] Query path: ' + self.query_deployment_path)
 				self.logger.info('[CONFIG-DEPLOYMENT] Actual schema name: ' + self.actual_schema_name)
-				self.logger.info('[CONFIG-DEPLOYMENT] Previous schema occurs (1-true/0-false): ' + self.previous_schema_occurs)
+				self.logger.info('[CONFIG-DEPLOYMENT] Previous schema occurs (1-true/0-false): ' + str(self.previous_schema_occurs))
 				self.deploy(self.query_deployment_path,self.previous_schema_occurs,self.actual_schema_name,self.previous_schema_name)
 
 	def __del__(self):

@@ -29,19 +29,34 @@ bold22 = Font(bold=True,size=22)
 bold36 = Font(bold=True,size=36)
 
 # Method for setting red or green fill -> is greater or smaller than particular cell
-def formatRedGreenFill(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare):
-	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=redFill))
-        ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=greenFill))  
-        ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='equal', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=orangeFill))
-
+def formatRedGreenFill(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare,tpch=0):
+	if tpch == 0:
+		ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='equal', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=orangeFill))
+                ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='greaterThan', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=redFill))
+                ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='lessThan', formula=['DBD!${0}'.format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=greenFill))
+	else:
+		ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='equal', formula=["'DBD-ALL'!${0}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=orangeFill))
+		ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='greaterThan', formula=["'DBD-ALL'!${0}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=redFill))
+		ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate), CellIsRule(operator='lessThan', formula=["'DBD-ALL'!${0}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)], stopIfTrue=True, fill=greenFill))  
+	ws['{0}'.format(ws.cell(row=row_comparing, column=column_comparing).coordinate)].number_format = '### ### ### ### ###'
 
 # Method for setting deferences on two metrics        
 # Difference is situated one cell under comparing metrics
 def formatDifference(ws,dbd,row_comparing,column_comparing,row_to_compare,column_to_compare,tpch=0):
 	if tpch == 0:
-	        ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD!{0}-{1}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
+	        ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "={0}/(DBD!{1})".format(ws.cell(row=row_comparing, column=column_comparing).coordinate,dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)
+		ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)].number_format = '0.###0'
 	else:
-		ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "=DBD-ALL!{0}-{1}".format(dbd.cell(row=row_to_compare, column=column_to_compare).coordinate,ws.cell(row=row_comparing, column=column_comparing).coordinate)
+		ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)] = "={0}/('DBD-ALL'!{1})".format(ws.cell(row=row_comparing, column=column_comparing).coordinate,dbd.cell(row=row_to_compare, column=column_to_compare).coordinate)
+		ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)].number_format = '0.###0'
+	
+def formatResult(ws,row_number, column_result):
+	ws['{0}'.format(ws.cell(row=row_number, column=column_result).coordinate)] = "=({0}+{1}+{2})/3".format(ws.cell(row=row_number, column=column_result-4).coordinate,ws.cell(row=row_number, column=column_result-3).coordinate,ws.cell(row=row_number, column=column_result-2).coordinate)
+	
+	ws['{0}'.format(ws.cell(row=row_number, column=column_result).coordinate)].number_format = '0.###0'
+	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='equal', formula=['1'], stopIfTrue=True, fill=orangeFill))
+	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='greaterThan', formula=['1'], stopIfTrue=True, fill=redFill))
+	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='lessThan', formula=['1'], stopIfTrue=True, fill=greenFill))
 
 
 # Method for setting function AVERAGE for each query and COUNT of queries
@@ -59,8 +74,9 @@ def createAVGTable(ws1,column_start):
 	ws1.cell(row=8, column=column_start+2, value="used_memory_kb")
 	ws1.cell(row=8, column=column_start+3, value="CPU_TIME")
 	ws1.cell(row=8, column=column_start+4, value="queries_COUNT")
+	ws1.cell(row=8, column=column_start+5, value="RESULT")
     	# Formatting - blue color and bold 
-    	for cellColumn in range(column_start,column_start+5):
+    	for cellColumn in range(column_start,column_start+6):
         	ws1.cell(row=8,column=cellColumn).fill=blueFill
          	ws1.cell(row=8,column=cellColumn).font=bold
             
@@ -68,7 +84,8 @@ def createAVGTable(ws1,column_start):
         for cellColumn in range(column_start,column_start+5):
             if ws1.title == "DBD":
         	       ws1.cell(row=9,column=cellColumn).fill=orangeFill
-            
+   	    ws1.cell(row=9,column=cellColumn).number_format = '### ### ### ### ###'
+          
 	# Items - line
     #	ws1.cell(row=99, column=column_start, value=int(0))
 	ws1["{0}".format(ws1.cell(row=99, column=column_start).coordinate)]=0    
@@ -130,6 +147,7 @@ def createOverview(ws,queries,testname):
                         ws.cell(row=row_start+1,column=column_one).fill=blueFill
                         ws.cell(row=row_start+1,column=column_one).font=bold
 			ws.cell(row=row_start+2,column=column_one).fill=orangeFill			
+			ws.cell(row=row_start+2,column=column_one).number_format = '### ### ### ### ###'
 
 		if part != 1:
 			ws.cell(row=row_start+1,column=(part-1)*10).font=bold22
@@ -144,6 +162,7 @@ def createOverview(ws,queries,testname):
                 ws.cell(row=row_start+1,column=i).font=bold
                 for j in range (0,2):
                         ws['{0}'.format(ws.cell(row=row_start+j+1, column=i).coordinate)] = "=DBD!{0}".format(ws.cell(row=13+j, column=i).coordinate)
+		ws.cell(row=row_start+2,column=i).number_format = '### ### ### ### ###'
 
         ws.cell(row=15, column=11, value='All TPC-H queries')
         ws.cell(row=15, column=11).font=bold22
@@ -158,14 +177,26 @@ def createOverview(ws,queries,testname):
                 ws.cell(row=row_start+1,column=column_one).font=bold
 		ws.cell(row=row_start+2,column=column_one).fill=orangeFill
 
-	# Width of cells    
-	dims = {}
+	column_widths = []
 	for row in ws.rows:
-		for cell in row:
-			if cell.value:
-				dims[cell.column] = max((dims.get(cell.column, 0), len(str(cell.value))))
-	for col, value in dims.items():
-		ws.column_dimensions[col].width = value    
+	    for i, cell in enumerate(row):
+		if len(column_widths) > i:
+		    if len(cell) > column_widths[i]:
+			column_widths[i] = len(cell)
+
+	for i, column_width in enumerate(column_widths):
+	    worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
+
+
+
+	# Width of cells    
+#	dims = {}
+#	for row in ws.rows:
+#		for cell in row:
+#			if cell.value:
+#				dims[cell.column] = max((dims.get(cell.column, 0), len(str(cell.value))))
+#	for col, value in dims.items():
+#		ws.column_dimensions[col].width = value    
         
 # Method for adding new schema to Overview
 def addToOverview(wb,ws,new,queries,schema):  
@@ -191,13 +222,23 @@ def addToOverview(wb,ws,new,queries,schema):
 			column_one = (part-1)*10 + i
 			# Copying data
 			for j in range (0,3):
+				if i == 5 and j == 2:
+                                	continue
 				ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=8+j, column=column_one).coordinate)
 			ws.cell(row=row_start+1,column=column_one).fill=blueFill
 			ws.cell(row=row_start+1,column=column_one).font=bold
 
 					# Formatting - green/red 
-			formatRedGreenFill(ws,dbd,row_start+2,column_one,9,column_one)
+			if i < 5: 
+				formatRedGreenFill(ws,ws,row_start+2,column_one,9,column_one)
+				ws.cell(row=row_start+3,column=column_one).number_format = '0.###0'
 
+		column_start = (part-1)*10 + 1
+		formatResult(ws,row_start+3,column_start + 5)
+	
+		ws.cell(row=row_start+1,column=(part-1)*10 + 6).fill=blueFill
+                ws.cell(row=row_start+1,column=(part-1)*10 + 6).font=bold
+		ws.cell(row=row_start+1,column=(part-1)*10 + 6, value = 'Result')
                 if part != 1:
                         ws.cell(row=row_start+1,column=(part-1)*10).font=bold22
                         ws.cell(row=row_start+1,column=(part-1)*10).value = '={0}'.format(ws.cell(row=3,column=part).coordinate)
@@ -210,12 +251,17 @@ def addToOverview(wb,ws,new,queries,schema):
 			ws.cell(row=row_start, column=column_one, value='All TPC-H queries')
         		ws.cell(row=row_start, column=column_one).font=bold22
 		for j in range (0,3):
+			if i == 5 and j == 3:
+				break
 			ws['{0}'.format(ws.cell(row=row_start+j+1, column=column_one).coordinate)] = "='{0}-ALL'!{1}".format(schema,newAll.cell(row=8+j, column=i).coordinate)
 		ws.cell(row=row_start+1,column=column_one).fill=blueFill
 		ws.cell(row=row_start+1,column=column_one).font=bold
+		ws.cell(row=row_start+3,column=column_one).number_format = '0.###0'
 
-				# Formatting - green/red 
-		formatRedGreenFill(ws,dbdAll,row_start+2,column_one,9,i)
+		if i < 5 :		# Formatting - green/red 
+			formatRedGreenFill(ws,ws,row_start+1,column_one,17,16+i)
+        formatResult(ws,26 + (int(ws.cell(row=4,column=2).value)-1)*10+3,16)
+
 
 	for i in range (1,10):
         	row_start = 26 + (int(ws.cell(row=4,column=2).value)-1)*10
@@ -227,8 +273,13 @@ def addToOverview(wb,ws,new,queries,schema):
                 ws.cell(row=row_start+1,column=i).font=bold
 		for j in range (0,3):
 	                ws['{0}'.format(ws.cell(row=row_start+j+1, column=i).coordinate)] = "={0}!{1}".format(schema,ws.cell(row=13+j, column=i).coordinate)
-			formatRedGreenFill(ws,dbd,row_start+2,i,9,i)
-		
+			formatRedGreenFill(ws,ws,row_start+2,i,14,i)
+		ws.cell(row=row_start+2,column=i).number_format = '0.###0'
+	
+	row_start = 26 + (int(ws.cell(row=4,column=2).value)-1)*10
+	ws.cell(row=row_start+1,column=16).fill=blueFill
+        ws.cell(row=row_start+1,column=16).font=bold
+        ws.cell(row=row_start+1,column=16, value = 'Result')	
 
 def createProfile(ws1,column_start):
         # Query profile
@@ -254,6 +305,7 @@ def createProfile(ws1,column_start):
         for name in ["Customer:","Lineitem:","Nation:","Orders:","Part:","Partsupp:","Region:","Supplier:","SUM:"]:
                 ws1.cell(row=13,column=1+i, value=name)
                 ws1.cell(row=13,column=1+i).fill=lightblueFill
+		ws1.cell(row=14,column=1+i).number_format = '### ### ### ### ###'
                 #ws1.cell(row=14,column=1+i).fill=greyFill
                 i += 1
 
@@ -291,7 +343,7 @@ def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):
 
 # Method for creating new sheer according to new schema
 # Particular step: duplicate Pattern sheet and fill Schema name
-def duplicatePattern(schema,testname,queries,query,tpch=0):
+def duplicatePattern(schema,testname,queries,query):
     wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     # Creating snew sheet
     if schema not in wb.get_sheet_names():
@@ -314,17 +366,27 @@ def duplicatePattern(schema,testname,queries,query,tpch=0):
         overview.cell(row=4,column=2).value = int(overview.cell(row=4,column=2).value) + 1 
 
 	for part in range(1,len(queries)+2):
+
 		for i in range(1,5):
 			formatRedGreenFill(new,ws,9,((part-1)*10 + i),9,((part-1)*10 + i))
 
 		for i in range (1,5):
 			formatDifference(new,ws,9,((part-1)*10+i),9,((part-1)*10+i))
 
+		formatResult(new,10,((part-1)*10 + 6))
+
 		if len(queries) == 1:
 			break
+		#row_number = 10
+		#column_result = (part-1)*10 + 6
+		#ws['{0}'.format(ws.cell(row=row_number, column=column_result).coordinate)].number_format = '0.###0'
+        	#ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='equal', formula=['1'], stopIfTrue=True, fill=orangeFill))
+        	#ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='greaterThan', formula=['1'], stopIfTrue=True, fill=redFill))
+        	#ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='lessThan', formula=['1'], stopIfTrue=True, fill=greenFill))
 
-		if len(queries) > 1 and part == 1:
-			continue
+	#	if len(queries) > 1 and part == 1:
+	#		continue
+		
 
 		# USED BYTES PROJECTIONS
 	for j in range(1,10):
@@ -333,14 +395,14 @@ def duplicatePattern(schema,testname,queries,query,tpch=0):
 	# Setting format for Query Profile Plan part of Excel file    
         new = formatQueryProfilePlan(new)
 
-        for i in range(1,5):
-                formatRedGreenFill(newAll,wsAll,9,i,9,i)
-		formatDifference(newAll,wsAll,9,i,9,i)
+        for i in range(1,4):
+                formatRedGreenFill(newAll,wsAll,9,i,9,i,1)
+		formatDifference(newAll,wsAll,9,i,9,i,1)
 
                 # USED BYTES PROJECTIONS
         for j in range(1,10):
-                formatRedGreenFill(newAll,wsAll,14,j,14,j)
-                formatDifference(newAll,wsAll,14,j,14,j) 
+                formatRedGreenFill(newAll,wsAll,14,j,14,j,1)
+                formatDifference(newAll,wsAll,14,j,14,j,1) 
 
 	wb.save('CompareOutput/' + testname + '.xlsx')        
 
@@ -489,7 +551,7 @@ def createExcelFile(testname,queries):
 		for col, value in dims.items():
 			ws1.column_dimensions[col].width = value
 
-            
+				    
 		# Create pattern for other schemas
 		pattern = wb.copy_worksheet(ws1)
        		
@@ -517,22 +579,23 @@ def createExcelFile(testname,queries):
 		for part in range(1,len(queries)+2):			
 			for i in range (1,5):
                 		formatDifference(pattern,ws1,9,((part-1)*10+i),9,((part-1)*10+i))
-			    
+			
+			formatResult(pattern,10,((part-1)*10 + 6))		
+	   
 			if len(queries) == 1:
 				break
 				
-			if len(queries) > 1 and part == 1:
-				continue
 
 		# USED BYTES PROJECTIONS
             	for j in range(1,10):
                     	formatDifference(pattern,ws1,14,j,14,j)
 
 		for i in range (1,5):
-                	formatDifference(patternAll,wsAll,9,i,9,i)
+                	formatDifference(patternAll,wsAll,9,i,9,i,1)
+		formatResult(patternAll,10,6)
 
 		for j in range(1,10):
-                        formatDifference(patternAll,wsAll,14,j,14,j)
+                        formatDifference(patternAll,wsAll,14,j,14,j,1)
 
 
         	# Method for creating Overview        
