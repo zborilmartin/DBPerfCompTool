@@ -76,7 +76,11 @@ class DBPerfComp(object):
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
 		monitor_statement = monitor_statement.replace("QUERYNUMBER", query)
+		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
+		if int(query) in [2,6,11,12,14,15,19,22]:
+               		#self.logger.info('Sleeped for 60 seconds')
+			time.sleep(60)
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
         
@@ -89,9 +93,9 @@ class DBPerfComp(object):
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
 		# Loading profile path to Excel
-                loadProfilePath(schema,testname,rows,listQueries,query)            
+                #loadProfilePath(schema,testname,rows,listQueries,query)            
             	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
-		
+		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
 		for row in rows:	
 			query_statement = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label,query) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}', %s)" % (tablename, query)
@@ -117,7 +121,10 @@ class DBPerfComp(object):
 					# Executing given query
 					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
-					#rows = cursor.fetchall()
+					rows = cursor.fetchall()
+		#			self.logger.info("Output:")
+	#				for row in rows:
+#						self.logger.info(row)
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
 					for j in range(1,23):
@@ -427,7 +434,7 @@ class DBPerfComp(object):
 		cursor.execute(statement2)
 		self.logger.info('[SCHEMA] DONE - COPY DATA')
 
-	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,desing_queries,schema):
+	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,design_queries,schema):
                 cursor = self.conn.cursor()
 		try:
 			cursor.execute("SELECT DESIGNER_DROP_DESIGN('{0}')").format(design_name)   
@@ -444,9 +451,10 @@ class DBPerfComp(object):
 		for table in tables:
 			cursor.execute("SELECT DESIGNER_ADD_DESIGN_TABLES('{0}','{1}.{2}')".format(design_name,schema,table))
 			self.logger.info('[DESIGN] DESIGNER_ADD_DESIGN_TABLES: ' + table)
-		for query in query:
+		for query in design_queries:
 			cursor.execute("SELECT DESIGNER_ADD_DESIGN_QUERIES('{0}', '{1}/{2}.sql','true')".format(design_name,query_path,query))
 			self.logger.info('[DESIGN] DESIGNER_ADD_DESIGN_QUERIES: ' + str(query))
+			self.logger.info("SELECT DESIGNER_ADD_DESIGN_QUERIES('{0}', '{1}/{2}.sql','true')".format(design_name,query_path,query))
 		cursor.execute("SELECT DESIGNER_SET_DESIGN_TYPE('{0}', '{1}')".format(design_name,typeDesign))
 		self.logger.info('[DESIGN] DESIGNER_SET_DESIGN_TYPE: ' + typeDesign)
 		cursor.execute("SELECT DESIGNER_SET_OPTIMIZATION_OBJECTIVE('{0}', '{1}')".format(design_name,objective))
@@ -523,11 +531,11 @@ class DBPerfComp(object):
 				self.logger.info('[CONFIG-DESIGN] Objective: ' +  self.objective)
 				self.logger.info('[CONFIG-DESIGN] Deploy path: ' + self.deploy_path)
 				self.logger.info('[CONFIG-DESIGN] Deployment - 1-true/0-false: ' + str(self.deployment))
-				for table in tables:
+				for table in self.tables:
 					self.logger.info('[CONFIG-DESIGN] Table: ' + table)
-				for query in desing_queries:
+				for query in self.design_queries:
 					self.logger.info('[CONFIG-DESIGN] Query: ' + query)
-				self.logger.info('[CONFIG-DESIGN] Design schema: ' + design_schema)
+				self.logger.info('[CONFIG-DESIGN] Design schema: ' + self.design_schema)
 
 				self.createDesign(self.design_name, self.query_path, self.typeDesign, self.objective, self.deploy_path, self.deployment, self.tables,self.design_queries,self.design_schema)
 			if mode.upper() == 'DEPLOYMENT':

@@ -259,7 +259,7 @@ def addToOverview(wb,ws,new,queries,schema,testname):
 		ws.cell(row=row_start+3,column=column_one).number_format = '0.###0'
 
 		if i < 5 :		# Formatting - green/red 
-			formatRedGreenFill(ws,ws,row_start+1,column_one,17,16+i,testname)
+			formatRedGreenFill(ws,dbdAll,row_start+2,column_one,9,i,testname,1)
         formatResult(ws,26 + (int(ws.cell(row=4,column=2).value)-1)*10+3,16)
 
 
