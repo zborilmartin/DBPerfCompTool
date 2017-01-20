@@ -80,7 +80,8 @@ class DBPerfComp(object):
 		cursor = self.conn.cursor()
 		if int(query) in [2,6,11,12,14,15,19,22]:
                		#self.logger.info('Sleeped for 60 seconds')
-			time.sleep(60)
+			#time.sleep(60)
+			time.sleep(10)
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
         
@@ -93,7 +94,7 @@ class DBPerfComp(object):
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
 		# Loading profile path to Excel
-                #loadProfilePath(schema,testname,rows,listQueries,query)            
+                loadProfilePath(schema,testname,rows,listQueries,query)            
             	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
 		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
@@ -475,22 +476,22 @@ class DBPerfComp(object):
 			self.logger.info('[CONFIG-DEPLOYMENT] Previous schema name: ' + previous_schema_name)
 
 		# Old projections will be dropped in other step
-		statement = statement.replace('DROP', '--DROP')
+#		statement = statement.replace('DROP', '--DROP')
 		cursor.execute(statement)
 		self.logger.info('[DEPLOYMENT] Query executed')
 	
 		# Selecting old projection names 
-		cursor.execute("select projection_name from projections where projection_schema ILIKE '{0}' and projection_name NOT ILIKE '%{1}%'".format(actual_schema_name,actual_schema_name))
-		rows = cursor.fetchall()
+#		cursor.execute("select projection_name from projections where projection_schema ILIKE '{0}' and projection_name NOT ILIKE '%{1}%'".format(actual_schema_name,actual_schema_name))
+#		rows = cursor.fetchall()
 
 		# For each projection perform dropping
-		for row in rows:
-			try:
-				cursor.execute('DROP PROJECTION {0}.{1} CASCADE'.format(actual_schema_name,row[0]))	
-				self.logger.info('[DEPLOYMENT] Dropping projection ' + row[0])
+#		for row in rows:
+#			try:
+#				cursor.execute('DROP PROJECTION {0}.{1} CASCADE'.format(actual_schema_name,row[0]))	
+#				self.logger.info('[DEPLOYMENT] Dropping projection ' + row[0])
 			# If dropping is not successful the user is asked to manual drop
-			except Exception as e:
-				self.logger.info('[DEPLOYMENT] Projection ' + row[0] + ' was NOT dropped. Please drop it manually!')
+#			except Exception as e:
+#				self.logger.info('[DEPLOYMENT] Projection ' + row[0] + ' was NOT dropped. Please drop it manually!')
 
 	def main(self):
 		logging.basicConfig(level=logging.INFO)

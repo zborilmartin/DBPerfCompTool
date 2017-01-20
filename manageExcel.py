@@ -88,7 +88,8 @@ def createAVGTable(ws1,column_start,testname):
           
 	# Items - line
     #	ws1.cell(row=499, column=column_start, value=int(0))
-	ws1["{0}".format(ws1.cell(row=499, column=column_start).coordinate)]=0    
+	ws1["{0}".format(ws1.cell(row=499, column=column_start).coordinate)]=0
+	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+3).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)  
 	ws1.cell(row=500, column=column_start, value="start_timestamp")
 	ws1.cell(row=500, column=column_start+1, value="transaction_id")
 	ws1.cell(row=500, column=column_start+2, value="statement_id")
