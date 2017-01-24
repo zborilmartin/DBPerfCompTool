@@ -16,7 +16,7 @@ class DBPerfComp(object):
 	#   - Config file
 	@staticmethod
     	def arg_parser():
-        	parser = argparse.ArgumentParser(description="DB Performance Comparision tool")
+        	parser = argparse.ArgumentParser(description="DB Performance Comparison tool")
 	        parser.add_argument('-cf', '--conf_file', default='dbd.yaml', help='Config file to DBPerfTool')
         	args = parser.parse_args()
 	        return args
@@ -151,7 +151,7 @@ class DBPerfComp(object):
 		self.logger.info('Before file Size')	
                 fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}.txt'.format(testname,testname,schema)	
 		if not os.path.exists(fileSize):	
-			self.logger.info('Projection size file is creating')	
+			self.logger.info('Projection size file is being created')	
 			monitor_statement_statement = self.extract('monitor_projections_size')
 			monitor_statement_statement = monitor_statement_statement.replace("SCHEMANAME", schema)
 					
@@ -470,7 +470,7 @@ class DBPerfComp(object):
 		# Extracting deployment query
 		statement = self.extract(query_deployment_path)
 
-		# If 1 - replacing old schema name with new schema name in query 
+		# If 1 - replacement of old schema name with new schema name in query 
 		if previous_schema_occurs == 1:
 	                statement = statement.replace(previous_schema_name, actual_schema_name)
 			self.logger.info('[CONFIG-DEPLOYMENT] Previous schema name: ' + previous_schema_name)

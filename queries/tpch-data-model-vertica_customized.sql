@@ -1,3 +1,4 @@
+-- TAKEN FROM ORIGIN SOURCE: https://github.com/jaceksan/gdc-db-perf-test/blob/final/tpch/tpch-data-model-vertica_customized.sql
 -- derived from /opt/tpch/dbgen/dss.ddl
 -- NOT valid for all relational databases, Vertica specific
 -- added constraints to enforce proper segmentation / sort order of Vertica projections
