@@ -97,7 +97,7 @@ class DBPerfComp(object):
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
 		# Loading profile path to Excel
-                loadProfilePath(schema,testname,rows,listQueries,query)            
+                loadExplain(schema,testname,rows,listQueries,query,1)            
             	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
 		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
@@ -129,6 +129,7 @@ class DBPerfComp(object):
 
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
+					schema_tmp = schema + '-ALL'
 					for j in range(1,23):
 						self.logger.info('[EXECUTE TEST] [ALL - TPC-H queries mode] Query n.: ' + str(j) + ' (iteration n.: ' + str(i+1) + ')')
 						statement = self.extract(j)
@@ -137,8 +138,8 @@ class DBPerfComp(object):
 						#time.sleep(2)
 						#if j in [2,6,11,12,14,15,19,22]:
                         #                                time.sleep(30)
-					for j in range(1,23):
-						schema_tmp = schema + '-ALL'
+			#		for j in range(1,23):
+					#	schema_tmp = schema + '-ALL'
                                                 self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
@@ -202,6 +203,8 @@ class DBPerfComp(object):
 
                                 fileVerboseExplain = './ExplainProfile/{0}/VerboseExplain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
 
+				rows_explain = []			
+
                                 if not os.path.exists(fileVerboseExplain):
 
 					# Executing EXPLAIN VERBOSE QUERY
@@ -214,6 +217,8 @@ class DBPerfComp(object):
                                         	for row in rows:
                                                 	explainVerboseFile.write(row[0]+'\n')
                                 	explainVerboseFile.close()
+
+					rows_explain = rows
 				
 				# Loading query for creating table in schema above
 				create_table_statement = self.extract('monitor_profile_create')
@@ -272,7 +277,7 @@ class DBPerfComp(object):
 	           		# Creating new sheet in specific XLSX file 
                 		duplicatePattern(schema,testname,listQueries,query)
                         	# Loading profile path to Excel
-                		loadProfilePath(schema,testname,rows,listQueries,query)		    
+                		loadExplain(schema,testname,rows_explain,listQueries,query)		    
 	
 
 

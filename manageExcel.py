@@ -297,19 +297,19 @@ def addToOverview(wb,ws,new,queries,schema,testname):
 
 def createProfile(ws1,column_start):
         # Query profile
-	ws1.cell(row=17, column=column_start, value="Query profile:")
+	ws1.cell(row=17, column=column_start, value="Explain Verbose")
         ws1.cell(row=17,column=column_start).fill=blueFill
         ws1.cell(row=17,column=column_start+1).fill=blueFill
         ws1.cell(row=17,column=column_start).font=bold22        
 
 	# Query profile - line
-	ws1.cell(row=18, column=column_start, value="running_time")
-	ws1.cell(row=18, column=column_start+1, value="memory_allocated_bytes")
-	ws1.cell(row=18, column=column_start+2, value="read_from_disk_bytes")
-	ws1.cell(row=18, column=column_start+3, value="path_line")    
- 	for cellColumn in range(column_start,column_start+5):
-        	ws1.cell(row=18,column=cellColumn).fill=blueFill
-         	ws1.cell(row=18,column=cellColumn).font=bold           
+	#ws1.cell(row=18, column=column_start, value="running_time")
+	#ws1.cell(row=18, column=column_start+1, value="memory_allocated_bytes")
+	#ws1.cell(row=18, column=column_start+2, value="read_from_disk_bytes")
+	#ws1.cell(row=18, column=column_start+3, value="path_line")    
+ 	#for cellColumn in range(column_start,column_start+5):
+       # 	ws1.cell(row=18,column=cellColumn).fill=blueFill
+       #  	ws1.cell(row=18,column=cellColumn).font=bold           
   
         # Size of projections
 	ws1.cell(row=12,column=1, value="Projection - Bytes:")
@@ -421,7 +421,7 @@ def duplicatePattern(schema,testname,queries,query):
 	wb.save('CompareOutput/' + testname + '.xlsx')        
 
 # Method for loading Query Profile Path into the excel file        
-def loadProfilePath(schema,testname,rows,queries,query):
+def loadExplain(schema,testname,rows,queries,query,monitor=0):
 	wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
     	ws = wb[schema]
 	#name = schema + '-ALL'	
@@ -432,12 +432,13 @@ def loadProfilePath(schema,testname,rows,queries,query):
 		index = queries.index(query)                
 		start_column= 10*(int(index)+1) + 1
 	tmp_row = 0
-	for row in rows:
-		tmp_column = 0
-		for item in row:
-			ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
-			tmp_column += 1
-		tmp_row += 1
+	if monitor == 0:
+		for row in rows:
+			tmp_column = 0
+			for item in row:
+				ws.cell(row=19+tmp_row,column=start_column+tmp_column,value=item)
+				tmp_column += 1
+			tmp_row += 1
 	if schema[-4:] == '-ALL':
 		schema = schema[:-4]
 	fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}.txt'.format(testname,testname,schema)
