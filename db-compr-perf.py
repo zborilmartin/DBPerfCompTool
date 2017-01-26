@@ -76,6 +76,7 @@ class DBPerfComp(object):
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
 		monitor_statement = monitor_statement.replace("QUERYNUMBER", query)
+		self.logger.info('Monitoring query: \n' + monitor_statement)
 		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
 		if int(query) in [2,6,11,12,14,15,19,22]:
@@ -124,8 +125,15 @@ class DBPerfComp(object):
 					cursor.execute(statement)
 					rows = cursor.fetchall()
 		#			self.logger.info("Output:")
-	#				for row in rows:
+	#				FOR row in rows:
 #						self.logger.info(row)
+			
+
+					# SMAZAT 
+					time.sleep(30)
+
+
+
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
 					for j in range(1,23):

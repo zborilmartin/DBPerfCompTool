@@ -5,9 +5,9 @@ SELECT   /*+ label(monitor_queries) */
         eep.statement_id,
         qp.query_duration_us,
         TIMESTAMPDIFF(ms, ra.acquisition_timestamp, ra.release_timestamp) as resource_request_execution_ms,
-        (ra.memory_inuse_kb - (qp.reserved_extra_memory/1024)) AS used_memory_kb,        
+	(qr.MEMORY_ACQUIRED_MB - (qp.reserved_extra_memory/(1024*1024)))*1024 AS used_memory_kb, 
         SUM(eep.counter_value) as CPU_TIME,
-        qp.query
+        qr.REQUEST_LABEL as query
 FROM
         EXECUTION_ENGINE_PROFILES eep
         INNER JOIN QUERY_PROFILES qp ON eep.transaction_id = qp.transaction_id AND eep.statement_id = qp.statement_id
@@ -20,10 +20,8 @@ FROM
 WHERE
         qr.start_timestamp > now()::timestamp - INTERVAL '180 minute'       
         AND qp.transaction_id != 0
-        AND query NOT LIKE 'select 1'
-        AND query NOT LIKE '%search_path%'
-        AND eep.counter_name ILIKE 'execution time%'
-        AND query LIKE '%/*+ label(monitoring_tpch_query_QUERYNUMBER)%'
+        AND eep.counter_name = 'execution time (us)'
+        AND qr.REQUEST_LABEL = 'monitoring_tpch_query_QUERYNUMBER'	
 GROUP BY
         eep.transaction_id, 
         eep.statement_id, 
@@ -33,7 +31,8 @@ GROUP BY
         qp.query_duration_us,
         resource_request_execution_ms,        
         qp.reserved_extra_memory,
-        ra.memory_inuse_kb             
+	qr.MEMORY_ACQUIRED_MB,
+        qr.REQUEST_LABEL    
 ORDER BY
         qr.start_timestamp DESC,  
         eep.transaction_id, 
