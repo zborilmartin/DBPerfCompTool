@@ -1,7 +1,7 @@
 -- Author: Jan Soubusta, https://github.com/jaceksan
 
 select
-  substr(ri.search_path, 1, instr(ri.search_path, ',') - 1) as schema_name,
+  pu.anchor_table_schema as schema_name,
   ri.time as start_timestamp, 
   ri.transaction_id, 
   ri.statement_id,
@@ -38,7 +38,7 @@ left outer join (
   group by transaction_id, statement_id, pool_name
 ) ra
   using (transaction_id, statement_id)
-join (
+left outer join (
   select transaction_id, statement_id,
     avg(cpu_time) as cpu_time
   from (
@@ -51,6 +51,7 @@ join (
   group by transaction_id, statement_id
 ) e
   using (transaction_id, statement_id)
+inner join projection_usage pu on ri.transaction_id = pu.transaction_id and ri.statement_id = pu.statement_id
 where 1=1
   and rc.time is not null -- already finished
   and ri.label = '_QUERY_'

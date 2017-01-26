@@ -123,10 +123,10 @@ class DBPerfComp(object):
 	                                # Loading query from folder
 	                                statement = self.extract(query)
 					# Executing given query
-					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+					self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
 					rows = cursor.fetchall()
-
+					time.sleep(10)
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
 					schema_tmp = schema + '-ALL'
@@ -294,10 +294,12 @@ class DBPerfComp(object):
 			self.logger.info('Actual schema:' + schema)
 			# Setting search path to this schema
 			# Others schemas are out of quering -> in query, there is no FROM <schema_name>.TABLE -> we eliminate it setting searching path
-			schema_statement = "set search_path to \"$user\", public, v_catalog, v_monitor, v_internal, %s" % schema
-		    
+			schema_statement = "set search_path to public, v_catalog, v_monitor, v_internal, %s" % schema
+		    	
 			# Executing SEARCH PATH query
 			cursor.execute(schema_statement)
+				
+			self.logger.info('[SET SEARCH PATH] Query: \n' + schema_statement)			
 		    
 			# Loading query for creating table in schema above
 			create_table_statement = self.extract('monitor_create')

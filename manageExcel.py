@@ -100,9 +100,10 @@ def createAVGTable(ws1,column_start,testname):
 	ws1.cell(row=500, column=column_start+6, value="memory_used_kb")
 	ws1.cell(row=500, column=column_start+7, value="CPU_time")
     	ws1.cell(row=500, column=column_start+8, value="Label/Query")
+        ws1.cell(row=500, column=column_start+9, value="Table schema")
 
     	# Formatting of table where data are stored
-    	for cellColumn in range(column_start,column_start+8):
+    	for cellColumn in range(column_start,column_start+9):
         	ws1.cell(row=500,column=cellColumn).fill=yellowFill
             	ws1.cell(row=500,column=cellColumn).font=bold
         
@@ -336,7 +337,11 @@ def loadDataToExcelToParticularTable(row,ws,start_column):
     		# other data type
 		else:   
 			ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
-    
+	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+10-1).coordinate)] = int(row[0])
+	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+10-1).coordinate)].format = bold
+	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+9-1).coordinate)].format = bold
+
+
 def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):
         # Opening excel - must be created and sheet with specific schema must be created
         wb = load_workbook('CompareOutput/{0}.xlsx'.format(testname))
