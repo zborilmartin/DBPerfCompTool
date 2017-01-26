@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS TABLENAME (
-        table_schame VARCHAR(30),
+        schema_name VARCHAR(30),
         start_timestamp TIMESTAMP,
         transaction_id BIGINT,
         statement_id BIGINT,

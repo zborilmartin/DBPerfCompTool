@@ -1,4 +1,4 @@
-# Author: Jan Soubusta, https://github.com/jaceksan
+-- Author: Jan Soubusta, https://github.com/jaceksan
 
 select
   substr(ri.search_path, 1, instr(ri.search_path, ',') - 1) as schema_name,
@@ -53,8 +53,5 @@ join (
   using (transaction_id, statement_id)
 where 1=1
   and rc.time is not null -- already finished
-  and ri.label = 'LABEL'
+  and ri.label = '_QUERY_'
 order by start_timestamp desc
---order by starttime desc
-limit 50
-;

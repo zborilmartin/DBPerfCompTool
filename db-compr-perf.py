@@ -60,8 +60,8 @@ class DBPerfComp(object):
 		self.logger.info("[MONITORING QUERY] Schema (path): " + row[0])
 		self.logger.info("[MONITORING QUERY] Timestamp: " + str(row[1]))
 		self.logger.info("[MONITORING QUERY] Transaction_id: " + str(row[2]))
-        self.logger.info("[MONITORING QUERY] Statement_id: " + str(row[3]))
-        self.logger.info("[MONITORING QUERY] Request_id: " + str(row[4]))		
+        	self.logger.info("[MONITORING QUERY] Statement_id: " + str(row[3]))
+        	self.logger.info("[MONITORING QUERY] Request_id: " + str(row[4]))		
 		self.logger.info("[MONITORING QUERY] Query duration (ms): " + str(row[5]))
 		self.logger.info("[MONITORING QUERY] Allocated memory (kb): " + str(row[6]))
 		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[7]))
@@ -76,7 +76,7 @@ class DBPerfComp(object):
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
-		monitor_statement = monitor_statement.replace("LABEL", query)
+		monitor_statement = monitor_statement.replace("QUERY", query)
 		self.logger.info('Monitoring query: \n' + monitor_statement)
 		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
@@ -102,7 +102,7 @@ class DBPerfComp(object):
 		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
 		for row in rows:	
-			query_statement = "insert into %s  (schema_name,start_timestamp,transaction_id,statement_id,request_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
+			query_statement = "insert into %s  (schema_name,start_timestamp,transaction_id,statement_id,request_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time_ms,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
 			query_statement = query_statement.format(*row)
 			#self.logger.info('[MONITORING QUERY] Monitoring query statement: ' + query_statement)
 			self.logInfo(row,tablename,schema,query)
@@ -186,7 +186,7 @@ class DBPerfComp(object):
 				statement = self.extract(query)
                 
                 		# Adding prefixes to query
-				statement_profile = "commit; PROFILE " + statement + '; commit;'
+				statement_profile = "PROFILE " + statement 
 				statement_explain = "EXPLAIN " + statement
 				statement_explain_verbose = "EXPLAIN VERBOSE " + statement
 				# Executing PROFILE QUERY
@@ -229,7 +229,9 @@ class DBPerfComp(object):
 				cursor.execute(create_table_statement)	
 				
 				# Executing PROFILE QUERY
+				cursor.commit()
 				cursor.execute(statement_profile)		
+				cursor.commit()
 				cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
 
 				# Loading data from database

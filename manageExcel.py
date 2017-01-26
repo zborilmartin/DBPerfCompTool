@@ -51,7 +51,7 @@ def formatDifference(ws,dbd,row_comparing,column_comparing,row_to_compare,column
 		ws['{0}'.format(ws.cell(row=row_comparing+1, column=column_comparing).coordinate)].number_format = '0.###0'
 	
 def formatResult(ws,row_number, column_result):
-	ws['{0}'.format(ws.cell(row=row_number, column=column_result).coordinate)] = "=({0}+{1}+{2})/3".format(ws.cell(row=row_number, column=column_result-4).coordinate,ws.cell(row=row_number, column=column_result-3).coordinate,ws.cell(row=row_number, column=column_result-2).coordinate)
+	ws['{0}'.format(ws.cell(row=row_number, column=column_result).coordinate)] = "=({0}+{1}+{2})/3".format(ws.cell(row=row_number, column=column_result-5).coordinate,ws.cell(row=row_number, column=column_result-3).coordinate,ws.cell(row=row_number, column=column_result-2).coordinate)
 	
 	ws['{0}'.format(ws.cell(row=row_number, column=column_result).coordinate)].number_format = '0.###0'
 	ws.conditional_formatting.add('{0}'.format(ws.cell(row=row_number, column=column_result).coordinate), CellIsRule(operator='equal', formula=['1'], stopIfTrue=True, fill=orangeFill))
@@ -62,8 +62,8 @@ def formatResult(ws,row_number, column_result):
 # Method for setting function AVERAGE for each query and COUNT of queries
 def createAVGandCOUNT(ws1,column_start):
         for i in range (0,4):    
-                ws1['{0}'.format(ws1.cell(row=9, column=column_start+i).coordinate)] = "=AVERAGE({0}:{1})".format(ws1.cell(row=501, column=column_start+4+i).coordinate,ws1.cell(row=10000, column=column_start+3+i).coordinate)
-        ws1['{0}'.format(ws1.cell(row=9, column=column_start+4).coordinate)] = "=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)
+                ws1['{0}'.format(ws1.cell(row=9, column=column_start+i).coordinate)] = "=AVERAGE({0}:{1})".format(ws1.cell(row=501, column=column_start+4+i).coordinate,ws1.cell(row=10000, column=column_start+4+i).coordinate)
+        ws1['{0}'.format(ws1.cell(row=9, column=column_start+4).coordinate)] = "=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)
       
         
 # Method for creating average table menu and table where the data are stored + formatting
@@ -90,16 +90,16 @@ def createAVGTable(ws1,column_start,testname):
 	# Items - line
     #	ws1.cell(row=499, column=column_start, value=int(0))
 	ws1["{0}".format(ws1.cell(row=499, column=column_start).coordinate)]=0
-	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)  
+	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)  
 	ws1.cell(row=500, column=column_start, value="start_timestamp")
 	ws1.cell(row=500, column=column_start+1, value="transaction_id")
 	ws1.cell(row=500, column=column_start+2, value="statement_id")
-    ws1.cell(row=500, column=column_start+3, value="request_id")    
+    	ws1.cell(row=500, column=column_start+3, value="request_id")    
 	ws1.cell(row=500, column=column_start+4, value="response_ms")
 	ws1.cell(row=500, column=column_start+5, value="memory_allocated_kb")
 	ws1.cell(row=500, column=column_start+6, value="memory_used_kb")
 	ws1.cell(row=500, column=column_start+7, value="CPU_time")
-    ws1.cell(row=500, column=column_start+8, value="Label/Query")
+    	ws1.cell(row=500, column=column_start+8, value="Label/Query")
 
     	# Formatting of table where data are stored
     	for cellColumn in range(column_start,column_start+8):
