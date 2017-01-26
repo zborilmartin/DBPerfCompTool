@@ -7,7 +7,7 @@
 -- using 1458817998 as a seed to the RNG
 
 
-select  /*+ label(monitoring_tpch_query_5) */
+select  /*+ label(_5_) */
 	n_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue
 from

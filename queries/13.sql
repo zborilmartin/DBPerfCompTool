@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_13) */
+select  /*+ label(_13_) */
 	c_count,
 	count(*) as custdist
 from

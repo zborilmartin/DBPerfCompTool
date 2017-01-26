@@ -3,10 +3,10 @@ CREATE TABLE IF NOT EXISTS TABLENAME (
         start_timestamp TIMESTAMP,
         transaction_id BIGINT,
         statement_id BIGINT,
-        query_duration_us NUMERIC(20,5),
-        resource_request_execution_ms BIGINT,
-        used_memory_kb NUMERIC(20,5),
-        CPU_TIME BIGINT,
-        label VARCHAR(100),
-	query VARCHAR(100)
+        request_id BIGINT,
+        response_ms NUMERIC(20,5),
+        memory_allocated_kb NUMERIC(20,5),
+        memory_used_kb NUMERIC(20,5),
+        cpu_time_ms BIGINT,
+        label VARCHAR(100)
         );

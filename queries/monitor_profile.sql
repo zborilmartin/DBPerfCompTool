@@ -9,5 +9,5 @@ FROM
 	QUERY_PLAN_PROFILES qpp
 WHERE 
 	transaction_id = TRANSACTION_NUMBER
-	AND statement_id = STATEMENT_NUMBER;  
+	--AND statement_id = STATEMENT_NUMBER;  
 

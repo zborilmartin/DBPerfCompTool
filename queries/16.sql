@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_16) */
+select  /*+ label(_16_) */
 	p_brand,
 	p_type,
 	p_size,

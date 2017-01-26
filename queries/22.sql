@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_22) */
+select  /*+ label(_22_) */
 	cntrycode,
 	count(*) as numcust,
 	sum(c_acctbal) as totacctbal

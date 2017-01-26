@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_12) */
+select  /*+ label(_12_) */
 	l_shipmode,
 	sum(case
 		when o_orderpriority = '1-URGENT'

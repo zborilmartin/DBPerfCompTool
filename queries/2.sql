@@ -3,7 +3,7 @@
 -- Functional Query Definition
 -- Approved February 1998
 
-select  /*+ label(monitoring_tpch_query_2) */
+select  /*+ label(_2_) */
 	s_acctbal,
 	s_name,
 	n_name,

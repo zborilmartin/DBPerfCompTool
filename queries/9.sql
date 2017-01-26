@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(monitoring_tpch_query_9) */
+select  /*+ label(_9_) */
 	nation,
 	o_year,
 	sum(amount) as sum_profit

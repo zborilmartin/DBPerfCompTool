@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(monitoring_tpch_query_19) */
+select  /*+ label(_19_) */
 	sum(l_extendedprice* (1 - l_discount)) as revenue
 from
 	lineitem,

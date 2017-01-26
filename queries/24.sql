@@ -1,5 +1,5 @@
 
-select  /*+ label(monitoring_tpch_query_24) */
+select  /*+ label(_24_) */
 	n_name,
 	l_shipmode,
 	c_mktsegment

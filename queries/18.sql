@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_18) */
+select  /*+ label(_18_) */
 	c_name,
 	c_custkey,
 	o_orderkey,

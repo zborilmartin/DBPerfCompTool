@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_7) */
+select  /*+ label(_7_) */
 	supp_nation,
 	cust_nation,
 	l_year,

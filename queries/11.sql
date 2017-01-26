@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_11) */
+select  /*+ label(_11_) */
 	ps_partkey,
 	sum(ps_supplycost * ps_availqty) as value
 from

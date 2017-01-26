@@ -1,39 +1,60 @@
-SELECT   /*+ label(monitor_queries) */
-        pu.anchor_table_schema,
-        qr.start_timestamp,
-        eep.transaction_id,
-        eep.statement_id,
-        qp.query_duration_us,
-        TIMESTAMPDIFF(ms, ra.acquisition_timestamp, ra.release_timestamp) as resource_request_execution_ms,
-	(qr.MEMORY_ACQUIRED_MB - (qp.reserved_extra_memory/(1024*1024)))*1024 AS used_memory_kb, 
-        SUM(eep.counter_value) as CPU_TIME,
-        qr.REQUEST_LABEL as query
-FROM
-        EXECUTION_ENGINE_PROFILES eep
-        INNER JOIN QUERY_PROFILES qp ON eep.transaction_id = qp.transaction_id AND eep.statement_id = qp.statement_id
-                        AND eep.session_id = qp.session_id AND eep.node_name = qp.node_name
-        INNER JOIN QUERY_REQUESTS qr ON eep.transaction_id = qr.transaction_id AND eep.statement_id = qr.statement_id
-                        AND eep.session_id = qr.session_id AND eep.node_name = qr.node_name
-        INNER JOIN RESOURCE_ACQUISITIONS ra ON eep.transaction_id = ra.transaction_id AND eep.statement_id = ra.statement_id
-                        AND eep.node_name = ra.node_name
-        INNER JOIN PROJECTION_USAGE pu ON eep.transaction_id = pu.transaction_id AND eep.statement_id = pu.statement_id
-WHERE
-        qr.start_timestamp > now()::timestamp - INTERVAL '180 minute'       
-        AND qp.transaction_id != 0
-        AND eep.counter_name = 'execution time (us)'
-        AND qr.REQUEST_LABEL = 'monitoring_tpch_query_QUERYNUMBER'	
-GROUP BY
-        eep.transaction_id, 
-        eep.statement_id, 
-        qp.query, 
-        pu.anchor_table_schema,
-        start_timestamp,
-        qp.query_duration_us,
-        resource_request_execution_ms,        
-        qp.reserved_extra_memory,
-	qr.MEMORY_ACQUIRED_MB,
-        qr.REQUEST_LABEL    
-ORDER BY
-        qr.start_timestamp DESC,  
-        eep.transaction_id, 
-        eep.statement_id
+# Author: Jan Soubusta, https://github.com/jaceksan
+
+select
+  substr(ri.search_path, 1, instr(ri.search_path, ',') - 1) as schema_name,
+  ri.time as start_timestamp, 
+  ri.transaction_id, 
+  ri.statement_id,
+  ri.request_id, 
+  datediff('millisecond', ri.time, nvl(rc.time, getdate())) as response_ms,
+  ra.memory_inuse_kb::integer as memory_allocated_kb,
+  ra.memory_inuse_kb::integer - (rc.reserved_extra_memory/1024)::integer as memory_used_kb,
+  e.cpu_time::integer,
+  ri.label
+from dc_requests_issued ri
+left outer join dc_requests_completed rc
+  on ri.node_name = rc.node_name and ri.session_id = rc.session_id and ri.request_id = rc.request_id
+left outer join (
+  select transaction_id, statement_id, pool_name,
+    avg(memory_kb) as memory_inuse_kb, avg(thread_count) as thread_count,
+    avg(resource_wait_ms) as resource_wait_ms
+  from (
+    select a.transaction_id, a.statement_id, a.pool_name, a.node_name,
+      first_value(a.memory_kb) over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name order by r.acquire_time desc) as memory_kb,
+      first_value(a.threads) over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name order by r.acquire_time desc) as thread_count,
+      datediff('millisecond',
+        min(r.queue_time) over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name),
+        max(r.acquire_time) over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name)
+      ) as resource_wait_ms,
+      row_number() over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name order by r.acquire_time desc) as rownum
+    from dc_resource_acquisitions a
+    join dc_resource_releases r
+      on (a.node_name=r.node_name and
+           a.transaction_id=r.transaction_id and
+           a.statement_id=r.statement_id and
+           a.start_time = r.queue_time)
+  ) x
+  where x.rownum = 1
+  group by transaction_id, statement_id, pool_name
+) ra
+  using (transaction_id, statement_id)
+join (
+  select transaction_id, statement_id,
+    avg(cpu_time) as cpu_time
+  from (
+    select
+      node_name, transaction_id, statement_id,
+      round(sum(decode(counter_name, 'execution time (us)', counter_value, 0))/1000) as cpu_time
+    from execution_engine_profiles
+    group by node_name, transaction_id, statement_id
+  ) x
+  group by transaction_id, statement_id
+) e
+  using (transaction_id, statement_id)
+where 1=1
+  and rc.time is not null -- already finished
+  and ri.label = 'LABEL'
+order by start_timestamp desc
+--order by starttime desc
+limit 50
+;

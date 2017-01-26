@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_6) */
+select  /*+ label(_6_) */
 	sum(l_extendedprice * l_discount) as revenue
 from
 	lineitem

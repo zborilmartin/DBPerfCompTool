@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_17) */
+select  /*+ label(_17_) */
 	sum(l_extendedprice) / 7.0 as avg_yearly
 from
 	lineitem,

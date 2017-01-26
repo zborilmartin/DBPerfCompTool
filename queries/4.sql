@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(monitoring_tpch_query_4) */
+select  /*+ label(_4_) */
 	o_orderpriority,
 	count(*) as order_count
 from

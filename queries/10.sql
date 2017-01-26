@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(monitoring_tpch_query_10) */
+select  /*+ label(_10_) */
 	c_custkey,
 	c_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue,

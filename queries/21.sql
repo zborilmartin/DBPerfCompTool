@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(monitoring_tpch_query_21) */
+select  /*+ label(_21_) */
 	s_name,
 	count(*) as numwait
 from

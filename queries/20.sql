@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(monitoring_tpch_query_20) */
+select  /*+ label(_20_) */
 	s_name,
 	s_address
 from

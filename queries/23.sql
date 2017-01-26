@@ -1,5 +1,5 @@
 
-select  /*+ label(monitoring_tpch_query_23) */	
+select  /*+ label(_23_) */	
 	c_name,
 	n_name,
 	o_orderpriority,

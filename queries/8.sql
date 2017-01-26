@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(monitoring_tpch_query_8) */
+select  /*+ label(_8_) */
 	o_year,
 	sum(case
 		when nation = 'SAUDI ARABIA' then volume

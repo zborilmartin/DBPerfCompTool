@@ -3,7 +3,7 @@
 -- Functional Query Definition
 -- Approved February 1998
 
-select  /*+ label(monitoring_tpch_query_1) */
+select  /*+ label(_1_) */
 	l_returnflag,
 	l_linestatus,
 	sum(l_quantity) as sum_qty,

@@ -5,7 +5,7 @@
 
 
 create view revenue0 (supplier_no, total_revenue) as
-	select  /*+ label(monitoring_tpch_query_15) */
+	select  /*+ label(_15_) */
 		l_suppkey,
 		sum(l_extendedprice * (1 - l_discount))
 	from

@@ -54,17 +54,18 @@ class DBPerfComp(object):
     
     	# Printing info about one row of output table
 	def logInfo(self,row,tablename,testname,query):
-		self.logger.info("[MONITORING QUERY] TABLE NAME: " + tablename)
+		self.logger.info("[MONITORING QUERY] Table name: " + tablename)
 		self.logger.info("[MONITORING QUERY] Test: " + testname)
-		self.logger.info("[MONITORING QUERY] Label: " + row[8])
-		self.logger.info("[MONITORING QUERY] Schema: " + row[0])
+		self.logger.info("[MONITORING QUERY] Label/query: " + row[9])
+		self.logger.info("[MONITORING QUERY] Schema (path): " + row[0])
 		self.logger.info("[MONITORING QUERY] Timestamp: " + str(row[1]))
-		self.logger.info("[MONITORING QUERY] Transaction: " + str(row[2]))
-		self.logger.info("[MONITORING QUERY] Query: " + query)
-		self.logger.info("[MONITORING QUERY] Query duration (us): " + str(row[4]))
-		self.logger.info("[MONITORING QUERY] Resource request execution (ms): " + str(row[5]))
-		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[6]))
-		self.logger.info("[MONITORING QUERY] CPU_TIME: " + str(row[7]))	
+		self.logger.info("[MONITORING QUERY] Transaction_id: " + str(row[2]))
+        self.logger.info("[MONITORING QUERY] Statement_id: " + str(row[3]))
+        self.logger.info("[MONITORING QUERY] Request_id: " + str(row[4]))		
+		self.logger.info("[MONITORING QUERY] Query duration (ms): " + str(row[5]))
+		self.logger.info("[MONITORING QUERY] Allocated memory (kb): " + str(row[6]))
+		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[7]))
+		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8]))	
 
             
 	# Method for sending data into the database
@@ -75,23 +76,24 @@ class DBPerfComp(object):
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
-		monitor_statement = monitor_statement.replace("QUERYNUMBER", query)
+		monitor_statement = monitor_statement.replace("LABEL", query)
 		self.logger.info('Monitoring query: \n' + monitor_statement)
 		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
-		if int(query) in [2,6,11,12,14,15,19,22]:
+		#if int(query) in [2,6,11,12,14,15,19,22]:
                		#self.logger.info('Sleeped for 60 seconds')
 			#time.sleep(60)
-			time.sleep(10)
+			#time.sleep(10)
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
         
         	# One column is whole query >> parsing only label from all rows
-		for row in rows:
-			start = row[8].find('/*+ label(') + 10
-			end = row[8].find(') */')
-			label = row[8][start:end]		
-			row[8] = label
+		#for row in rows:
+#			start = row[8].find('/*+ label(') + 10
+#			end = row[8].find(') */')#
+#			label = row[8][start:end]		
+#			row[8] = label
+
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
 		# Loading profile path to Excel
@@ -100,7 +102,7 @@ class DBPerfComp(object):
 		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
 		for row in rows:	
-			query_statement = "insert into %s  (table_schame,start_timestamp,transaction_id,statement_id,query_duration_us,resource_request_execution_ms,used_memory_kb,CPU_TIME,label,query) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}', %s)" % (tablename, query)
+			query_statement = "insert into %s  (schema_name,start_timestamp,transaction_id,statement_id,request_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
 			query_statement = query_statement.format(*row)
 			#self.logger.info('[MONITORING QUERY] Monitoring query statement: ' + query_statement)
 			self.logInfo(row,tablename,schema,query)
@@ -124,15 +126,6 @@ class DBPerfComp(object):
 					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
 					rows = cursor.fetchall()
-		#			self.logger.info("Output:")
-	#				FOR row in rows:
-#						self.logger.info(row)
-			
-
-					# SMAZAT 
-					time.sleep(30)
-
-
 
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
@@ -141,9 +134,9 @@ class DBPerfComp(object):
 						statement = self.extract(j)
 						#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 						cursor.execute(statement)
-						time.sleep(2)
-						if j in [2,6,11,12,14,15,19,22]:
-                                                        time.sleep(30)
+						#time.sleep(2)
+						#if j in [2,6,11,12,14,15,19,22]:
+                        #                                time.sleep(30)
 					for j in range(1,23):
 						schema_tmp = schema + '-ALL'
                                                 self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
@@ -193,7 +186,7 @@ class DBPerfComp(object):
 				statement = self.extract(query)
                 
                 		# Adding prefixes to query
-				statement_profile = "PROFILE " + statement
+				statement_profile = "commit; PROFILE " + statement + '; commit;'
 				statement_explain = "EXPLAIN " + statement
 				statement_explain_verbose = "EXPLAIN VERBOSE " + statement
 				# Executing PROFILE QUERY
@@ -253,7 +246,7 @@ class DBPerfComp(object):
 				 # In creat-table query is: TRANSACTION_NUMBER,STATEMENT_NUMBER
 				 # This text is replaced with name that we want
 				monitor_statement_statement = monitor_statement_statement.replace("TRANSACTION_NUMBER", str(TRANS_ID))
-				monitor_statement_statement = monitor_statement_statement.replace("STATEMENT_NUMBER", str(STATEM_ID))
+				#monitor_statement_statement = monitor_statement_statement.replace("STATEMENT_NUMBER", str(STATEM_ID))
 				monitor_statement_statement = monitor_statement_statement.replace("running_time", "running_time::VARCHAR")
 				monitor_statement_statement = monitor_statement_statement.replace("memory_allocated_bytes", "memory_allocated_bytes::VARCHAR")
 				monitor_statement_statement = monitor_statement_statement.replace("read_from_disk_bytes", "read_from_disk_bytes::VARCHAR")
@@ -482,24 +475,10 @@ class DBPerfComp(object):
 		if previous_schema_occurs == 1:
 	                statement = statement.replace(previous_schema_name, actual_schema_name)
 			self.logger.info('[CONFIG-DEPLOYMENT] Previous schema name: ' + previous_schema_name)
-
-		# Old projections will be dropped in other step
-#		statement = statement.replace('DROP', '--DROP')
+            
 		cursor.execute(statement)
 		self.logger.info('[DEPLOYMENT] Query executed')
-	
-		# Selecting old projection names 
-#		cursor.execute("select projection_name from projections where projection_schema ILIKE '{0}' and projection_name NOT ILIKE '%{1}%'".format(actual_schema_name,actual_schema_name))
-#		rows = cursor.fetchall()
 
-		# For each projection perform dropping
-#		for row in rows:
-#			try:
-#				cursor.execute('DROP PROJECTION {0}.{1} CASCADE'.format(actual_schema_name,row[0]))	
-#				self.logger.info('[DEPLOYMENT] Dropping projection ' + row[0])
-			# If dropping is not successful the user is asked to manual drop
-#			except Exception as e:
-#				self.logger.info('[DEPLOYMENT] Projection ' + row[0] + ' was NOT dropped. Please drop it manually!')
 
 	def main(self):
 		logging.basicConfig(level=logging.INFO)

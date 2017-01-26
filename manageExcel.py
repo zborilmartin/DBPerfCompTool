@@ -62,19 +62,20 @@ def formatResult(ws,row_number, column_result):
 # Method for setting function AVERAGE for each query and COUNT of queries
 def createAVGandCOUNT(ws1,column_start):
         for i in range (0,4):    
-                ws1['{0}'.format(ws1.cell(row=9, column=column_start+i).coordinate)] = "=AVERAGE({0}:{1})".format(ws1.cell(row=501, column=column_start+3+i).coordinate,ws1.cell(row=10000, column=column_start+3+i).coordinate)
-        ws1['{0}'.format(ws1.cell(row=9, column=column_start+4).coordinate)] = "=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+3).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)
+                ws1['{0}'.format(ws1.cell(row=9, column=column_start+i).coordinate)] = "=AVERAGE({0}:{1})".format(ws1.cell(row=501, column=column_start+4+i).coordinate,ws1.cell(row=10000, column=column_start+3+i).coordinate)
+        ws1['{0}'.format(ws1.cell(row=9, column=column_start+4).coordinate)] = "=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)
       
         
 # Method for creating average table menu and table where the data are stored + formatting
 def createAVGTable(ws1,column_start,testname):
 	# Average - line
-	ws1.cell(row=8, column=column_start, value="query_duration_us")
-	ws1.cell(row=8, column=column_start+1, value="resource_request_execution_ms")
-	ws1.cell(row=8, column=column_start+2, value="used_memory_kb")
-	ws1.cell(row=8, column=column_start+3, value="CPU_TIME")
+	ws1.cell(row=8, column=column_start, value="response_ms")
+	ws1.cell(row=8, column=column_start+1, value="memory_allocated_kb")
+	ws1.cell(row=8, column=column_start+2, value="memory_used_kb")
+	ws1.cell(row=8, column=column_start+3, value="CPU_time")
 	ws1.cell(row=8, column=column_start+4, value="queries_COUNT")
 	ws1.cell(row=8, column=column_start+5, value="RESULT")
+	ws1.cell(row=8, column=column_start+5).font=bold22 
     	# Formatting - blue color and bold 
     	for cellColumn in range(column_start,column_start+6):
         	ws1.cell(row=8,column=cellColumn).fill=blueFill
@@ -89,14 +90,17 @@ def createAVGTable(ws1,column_start,testname):
 	# Items - line
     #	ws1.cell(row=499, column=column_start, value=int(0))
 	ws1["{0}".format(ws1.cell(row=499, column=column_start).coordinate)]=0
-	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+3).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)  
+	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+3).coordinate)  
 	ws1.cell(row=500, column=column_start, value="start_timestamp")
 	ws1.cell(row=500, column=column_start+1, value="transaction_id")
 	ws1.cell(row=500, column=column_start+2, value="statement_id")
-	ws1.cell(row=500, column=column_start+3, value="query_duration_us")
-	ws1.cell(row=500, column=column_start+4, value="resource_request_execution_ms")
-	ws1.cell(row=500, column=column_start+5, value="used_memory_kb")
-	ws1.cell(row=500, column=column_start+6, value="CPU_TIME")
+    ws1.cell(row=500, column=column_start+3, value="request_id")    
+	ws1.cell(row=500, column=column_start+4, value="response_ms")
+	ws1.cell(row=500, column=column_start+5, value="memory_allocated_kb")
+	ws1.cell(row=500, column=column_start+6, value="memory_used_kb")
+	ws1.cell(row=500, column=column_start+7, value="CPU_time")
+    ws1.cell(row=500, column=column_start+8, value="Label/Query")
+
     	# Formatting of table where data are stored
     	for cellColumn in range(column_start,column_start+8):
         	ws1.cell(row=500,column=cellColumn).fill=yellowFill
@@ -325,9 +329,9 @@ def createProfile(ws1,column_start):
 def loadDataToExcelToParticularTable(row,ws,start_column):
 	#ws.cell(row=499,column=start_column).value = 0
 	ws.cell(row=499,column=start_column).value += int(1)
-	for i in range (1,9):
+	for i in range (1,10):
     		# integer data type, 1.column is schema - not storing in Excel file
-		if i in [4,5,6,7]:
+		if i in [5,6,7,8]:
 			ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
     		# other data type
 		else:   
