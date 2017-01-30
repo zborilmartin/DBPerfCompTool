@@ -54,5 +54,5 @@ join (
 inner join projection_usage pu on ri.transaction_id = pu.transaction_id and ri.statement_id = pu.statement_id
 where 1=1
   and rc.time is not null -- already finished
-  and ri.label = '_QUERY_TESTNAME_SCHEMA_RUNNAME_'
+  and ri.label = '_LABEL_'
 order by start_timestamp desc

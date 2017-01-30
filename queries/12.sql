@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_12_testname_schema_run_) */
+select  /*+ label(__12__LABEL_) */
 	l_shipmode,
 	sum(case
 		when o_orderpriority = '1-URGENT'

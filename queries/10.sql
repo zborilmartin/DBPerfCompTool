@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_10_testname_schema_run_) */
+select  /*+ label(__10__LABEL_) */
 	c_custkey,
 	c_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue,

@@ -73,14 +73,13 @@ class DBPerfComp(object):
 	def monitor(self, length, tablename, testname,schema,query,listQueries,runname,tpch=0):
 		self.logger.info('Query monitoring started')
         	# Storing query for monitoring database 
-		monitor_statement = self.extract('monitor')
+		monitor_statement = self.extract('monitor_snap')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
-		monitor_statement = monitor_statement.replace("QUERY", query)
-        monitor_statement = monitor_statement.replace("_TESTNAME_", '_' + testname + '_')
-        monitor_statement = monitor_statement.replace("_SCHEMA_", '_' + schema + '_')
-        monitor_statement = monitor_statement.replace("_RUNNAME_", '_' + runname + '_')
-		#self.logger.info('Monitoring query: \n' + monitor_statement)
+		label = "__{0}__{1}__{2}__{3}__".format(query,testname,schema,runname)
+		self.logger.info('Label monitoring: ' + label)
+		monitor_statement = monitor_statement.replace("_LABEL_",label)
+		self.logger.info('Monitoring query: \n' + monitor_statement)
 		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
 		#if int(query) in [2,6,11,12,14,15,19,22]:
@@ -138,8 +137,11 @@ class DBPerfComp(object):
 				if tpch == 0:
 	                                # Loading query from folder
 	                                statement = self.extract(query)
+					label = "__{0}__{1}__{2}__".format(testname,schema,runname)
+					self.logger.info('Label query: __' + query+ label)
+					statement = statement.replace("_LABEL_",label)
 					# Executing given query
-					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+					self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
 					if 'DBD' in schema:
 						self.logger.info('[EXECUTE TEST] Time sleep')
@@ -151,6 +153,7 @@ class DBPerfComp(object):
 					#time.sleep(10)
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)
 					statement = self.extract('snap_insert')
+					self.logger.info('Snap insert statements \n' + statement)
 					cursor.execute(statement)
 				else:
 					schema_tmp = schema + '-ALL'
@@ -320,7 +323,8 @@ class DBPerfComp(object):
 			self.logger.info('Actual schema:' + schema)
 			# Setting search path to this schema
 			# Others schemas are out of quering -> in query, there is no FROM <schema_name>.TABLE -> we eliminate it setting searching path
-			schema_statement = "set search_path to v_catalog, v_monitor, v_internal, %s" % schema
+			cursor.execute('create schema if not exists dc_snapshots')
+			schema_statement = "set search_path to %s, dc_snapshots, v_catalog, v_monitor, v_internal" % schema
 		    	
 			# Executing SEARCH PATH query
 			cursor.execute(schema_statement)
@@ -358,7 +362,12 @@ class DBPerfComp(object):
 			if not confData:
 				raise Exception('Data not loaded')
 			# Setting variables querise, testname, iteration, schemas
-            
+
+                        mode_unparsed = confData['Conf']['mode']
+                        self.modes = []
+                        mode_unparsed2 = "".join(mode_unparsed)
+                        self.modes = mode_unparsed2.split()
+
 			for mode in self.modes:
 				if mode.upper() not in ('COMPARE','SCHEMA','DESIGN','COMPARE-ALL','DEPLOYMENT'):
 					self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,SCHEMA,DESIGN,DEPLOYMENT')
@@ -374,21 +383,15 @@ class DBPerfComp(object):
 	     	        testname_unparsed = confData['Compare']['testName']
 			self.testname = "".join(testname_unparsed)
             
-	     	        runname_unparsed = confData['Compare']['runname']
-			self.runname = "".join(runname_unparsed)            
+	     	        runname_unparsed = confData['Compare']['runName']
+			self.runname = "".join(str(runname_unparsed))            
 
 			self.iteration = confData['Compare']['iteration']
 
 			schemas_unparsed = confData['Compare']['schemas']
 			schemas_unparsed2 = "".join(schemas_unparsed)
 			self.schemas = schemas_unparsed2.split()
-
-                        mode_unparsed = confData['Conf']['mode']
-                        self.modes = []
-                        mode_unparsed2 = "".join(mode_unparsed)
-                        self.modes = mode_unparsed2.split()
-
-
+ 
                         name_unparsed = confData['Schema']['name']
                         self.name = "".join(name_unparsed)
 
@@ -532,7 +535,7 @@ class DBPerfComp(object):
 			self.logger.info('[CONFIG] Mode: %s' % mode)
                         if mode.upper() == 'COMPARE' or mode.upper() == 'COMPARE-ALL':	
 				self.logger.info('[CONFIG-COMPARE] Testname: %s' % self.testname)
-                self.logger.info('[CONFIG-COMPARE] Runname: %s' % self.runname)
+ 		                self.logger.info('[CONFIG-COMPARE] Runname: %s' % self.runname)
 				self.logger.info('[CONFIG-COMPARE] Iteration: %s' % self.iteration)
 				self.logger.info('[CONFIG-COMPARE] Number of schemas: %s' % len(self.schemas))
 				for schema in self.schemas:

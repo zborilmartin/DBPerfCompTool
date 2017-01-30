@@ -1,6 +1,6 @@
 -- Author: Jan Soubusta, https://github.com/jaceksan
 
-select
+select distinct
   pu.anchor_table_schema as schema_name,
   ri.time as start_timestamp, 
   nvl(rc.time, getdate()) as endtime,
@@ -11,8 +11,8 @@ select
   ra.memory_inuse_kb::integer - (rc.reserved_extra_memory/1024)::integer as memory_used_kb,
   e.cpu_time::integer,
   ri.label
-from dc_requests_issued_snap ri
-left outer join dc_requests_completed_snap rc
+from dc_snapshots.dc_requests_issued_snap ri
+left outer join dc_snapshots.dc_requests_completed_snap rc
   on ri.node_name = rc.node_name and ri.session_id = rc.session_id and ri.request_id = rc.request_id
 left outer join (
   select transaction_id, statement_id, pool_name,
@@ -27,8 +27,8 @@ left outer join (
         max(r.acquire_time) over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name)
       ) as resource_wait_ms,
       row_number() over (partition by a.node_name, a.transaction_id, a.statement_id, a.pool_name order by r.acquire_time desc) as rownum
-    from dc_resource_acquisitions_snap a
-    join dc_resource_releases_snap r
+    from dc_snapshots.dc_resource_acquisitions_snap a
+    join dc_snapshots.dc_resource_releases_snap r
       on (a.node_name=r.node_name and
            a.transaction_id=r.transaction_id and
            a.statement_id=r.statement_id and
@@ -45,14 +45,14 @@ join (
     select
       node_name, transaction_id, statement_id,
       round(sum(decode(counter_name, 'execution time (us)', counter_value, 0))/1000) as cpu_time
-    from execution_engine_profiles_snap
+    from dc_snapshots.execution_engine_profiles_snap
     group by node_name, transaction_id, statement_id
   ) x
   group by transaction_id, statement_id
 ) e
   using (transaction_id, statement_id)
-inner join projection_usage_snap pu on ri.transaction_id = pu.transaction_id and ri.statement_id = pu.statement_id
+inner join dc_snapshots.projection_usage_snap pu on ri.transaction_id = pu.transaction_id and ri.statement_id = pu.statement_id
 where 1=1
   and rc.time is not null -- already finished
-  and ri.label = '_QUERY_TESTNAME_SCHEMA_RUNNAME_'
+  and ri.label = '_LABEL_'
 order by start_timestamp desc
