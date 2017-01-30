@@ -1,12 +1,13 @@
 Conf: 
-    mode:  SCHEMA DEPLOYMENT COMPARE
-#    mode: COMPARE
+#    mode:  SCHEMA DEPLOYMENT COMPARE
+    mode: COMPARE
     #mode: COMPARE-ALL
 Compare:
-    testName: test1_3_5
-    queries: 3 5
-    schemas: test1_3_5_my3 DBD test1_3_5_my3 test1_3_5_my2 test1_3_5_my3 test1_3_5_my1 test1_3_5_my3
-    iteration: 100
+    testName: test4_10_12
+    runName: 1
+    queries: 10 12
+    schemas: DBD_test4_10_12 test4_10_12_my1 test4_10_12_my2
+    iteration: 2
 Schema:
     name: test1_3_5_my3
     data_path: /mnt/ebs/vertica/tpch/10g

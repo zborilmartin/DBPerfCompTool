@@ -70,13 +70,16 @@ class DBPerfComp(object):
             
 	# Method for sending data into the database
     	# calling method loadDataToExcel - loading data from monitoring into excel file
-	def monitor(self, length, tablename, testname,schema,query,listQueries,tpch=0):
+	def monitor(self, length, tablename, testname,schema,query,listQueries,runname,tpch=0):
 		self.logger.info('Query monitoring started')
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
 		monitor_statement = monitor_statement.replace("QUERY", query)
+        monitor_statement = monitor_statement.replace("_TESTNAME_", '_' + testname + '_')
+        monitor_statement = monitor_statement.replace("_SCHEMA_", '_' + schema + '_')
+        monitor_statement = monitor_statement.replace("_RUNNAME_", '_' + runname + '_')
 		#self.logger.info('Monitoring query: \n' + monitor_statement)
 		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
@@ -102,7 +105,7 @@ class DBPerfComp(object):
 	#	for row in rows:
 	#		self.logger.info('REAL SCHEMA FROM MONITORING: ' + row)
                 loadExplain(schema,testname,rows,listQueries,query,1)            
-            	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
+ # ZDE SMAZAT KOMENTAR           	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
 		
 		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
@@ -122,7 +125,7 @@ class DBPerfComp(object):
 		cursor.close()
 
 
-	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname,tpch=0):
+	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname,runname,tpch=0):
 		self.logger.info('Snapshot tables being created')		
 		statement = self.extract('snap_create')
 		cursor.execute(statement)
@@ -146,7 +149,7 @@ class DBPerfComp(object):
 					for row in rows:
 						self.logger.info(row)
 					#time.sleep(10)
-					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
+					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)
 					statement = self.extract('snap_insert')
 					cursor.execute(statement)
 				else:
@@ -161,7 +164,7 @@ class DBPerfComp(object):
                         #                                time.sleep(30)
 			#		for j in range(1,23):
 					#	schema_tmp = schema + '-ALL'
-                                                self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
+                                                self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,runname,1)
 			                        statement = self.extract('snap_insert')
                         	                cursor.execute(statement)
 
@@ -305,7 +308,7 @@ class DBPerfComp(object):
 
 
 	# Method for running specific Query 
-	def runQuery(self,listQueries,listSchemas,iteration,testname,output_schema,tpch=0):
+	def runQuery(self,listQueries,listSchemas,iteration,testname,output_schema,runname,tpch=0):
 		cursor = self.conn.cursor()
         	self.logger.info('Running query')
 
@@ -338,7 +341,7 @@ class DBPerfComp(object):
 			cursor.execute(create_table_statement)		
 	
 			if output_schema == "monitoring_output":
-				self.executeTest(iteration,listQueries,cursor,tablename,schema,testname,tpch)
+				self.executeTest(iteration,listQueries,cursor,tablename,schema,testname,runname,tpch)
 			
 			if output_schema == "monitoring_profiles":
 				self.executeExplainProfile(listQueries,cursor,tablename,schema,testname,output_schema,tpch)
@@ -355,6 +358,12 @@ class DBPerfComp(object):
 			if not confData:
 				raise Exception('Data not loaded')
 			# Setting variables querise, testname, iteration, schemas
+            
+			for mode in self.modes:
+				if mode.upper() not in ('COMPARE','SCHEMA','DESIGN','COMPARE-ALL','DEPLOYMENT'):
+					self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,SCHEMA,DESIGN,DEPLOYMENT')
+					quit()
+            
 			queries_unparsed = confData['Compare']['queries']
 			if type(queries_unparsed) is int:                            
                     		self.queries = [str(queries_unparsed)]                
@@ -364,6 +373,9 @@ class DBPerfComp(object):
 	
 	     	        testname_unparsed = confData['Compare']['testName']
 			self.testname = "".join(testname_unparsed)
+            
+	     	        runname_unparsed = confData['Compare']['runname']
+			self.runname = "".join(runname_unparsed)            
 
 			self.iteration = confData['Compare']['iteration']
 
@@ -376,10 +388,6 @@ class DBPerfComp(object):
                         mode_unparsed2 = "".join(mode_unparsed)
                         self.modes = mode_unparsed2.split()
 
-			for mode in self.modes:
-				if mode.upper() not in ('COMPARE','SCHEMA','DESIGN','COMPARE-ALL','DEPLOYMENT'):
-					self.logger.error('Error in configuration file. Attribute not passed. Should be only COMPARE,COMPARE-ALL,SCHEMA,DESIGN,DEPLOYMENT')
-					quit()
 
                         name_unparsed = confData['Schema']['name']
                         self.name = "".join(name_unparsed)
@@ -524,6 +532,7 @@ class DBPerfComp(object):
 			self.logger.info('[CONFIG] Mode: %s' % mode)
                         if mode.upper() == 'COMPARE' or mode.upper() == 'COMPARE-ALL':	
 				self.logger.info('[CONFIG-COMPARE] Testname: %s' % self.testname)
+                self.logger.info('[CONFIG-COMPARE] Runname: %s' % self.runname)
 				self.logger.info('[CONFIG-COMPARE] Iteration: %s' % self.iteration)
 				self.logger.info('[CONFIG-COMPARE] Number of schemas: %s' % len(self.schemas))
 				for schema in self.schemas:
@@ -533,11 +542,11 @@ class DBPerfComp(object):
 					self.logger.info('[CONFIG-COMPARE] Query: %s' % query)
 			if mode.upper() == 'COMPARE':
 				createExcelFile(self.testname, self.queries)
-				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles")		
-				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output")
+				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles",self.runname)		
+				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output",self.runname)
 			if mode.upper() == 'COMPARE-ALL':
 				createExcelFile(self.testname, self.queries)
-				self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",1)
+				self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",self.runname,1)
 			if mode.upper() == 'SCHEMA':
 				self.logger.info('[CONFIG-SCHEMA] Schema name: %s' % self.name)
 				self.logger.info('[CONFIG-SCHEMA] Path of data to copy to database: %s' % self.data_path)

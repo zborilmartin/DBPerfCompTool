@@ -1,5 +1,5 @@
 
-select  /*+ label(_24_) */
+select  /*+ label(_24_testname_schema_run_) */
 	n_name,
 	l_shipmode,
 	c_mktsegment

@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_20_) */
+select  /*+ label(_20_testname_schema_run_) */
 	s_name,
 	s_address
 from

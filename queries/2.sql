@@ -3,7 +3,7 @@
 -- Functional Query Definition
 -- Approved February 1998
 
-select  /*+ label(_2_) */
+select  /*+ label(_2_testname_schema_run_) */
 	s_acctbal,
 	s_name,
 	n_name,

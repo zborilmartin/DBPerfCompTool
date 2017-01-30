@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_16_) */
+select  /*+ label(_16_testname_schema_run_) */
 	p_brand,
 	p_type,
 	p_size,

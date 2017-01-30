@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_6_) */
+select  /*+ label(_6_testname_schema_run_) */
 	sum(l_extendedprice * l_discount) as revenue
 from
 	lineitem

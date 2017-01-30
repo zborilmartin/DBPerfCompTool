@@ -1,5 +1,5 @@
 
-select  /*+ label(_23_) */	
+select  /*+ label(_23_testname_schema_run_) */	
 	c_name,
 	n_name,
 	o_orderpriority,

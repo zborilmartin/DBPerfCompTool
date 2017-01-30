@@ -3,7 +3,7 @@
 -- Functional Query Definition
 -- Approved February 1998
 
-select  /*+ label(_1_) */
+select  /*+ label(_1_testname_schema_run_) */
 	l_returnflag,
 	l_linestatus,
 	sum(l_quantity) as sum_qty,

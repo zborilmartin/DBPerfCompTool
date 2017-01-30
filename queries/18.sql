@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_18_) */
+select  /*+ label(_18_testname_schema_run_) */
 	c_name,
 	c_custkey,
 	o_orderkey,
