@@ -65,7 +65,7 @@ class DBPerfComp(object):
 		self.logger.info("[MONITORING QUERY] Query duration (ms): " + str(row[5]))
 		self.logger.info("[MONITORING QUERY] Allocated memory (kb): " + str(row[6]))
 		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[7]))
-		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8]))	
+		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8]) + '\n \n')	
 
             
 	# Method for sending data into the database
@@ -75,12 +75,19 @@ class DBPerfComp(object):
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor_snap')
         	# Adding LIMIT -> store data only for that queries that run in one iteration
-        	monitor_statement += " LIMIT 1"
-		label = "__{0}__{1}__{2}__{3}__".format(query,testname,schema,runname)
+        	#monitor_statement += " LIMIT 1"
+		label = ""
+		if tpch == 0:	
+			label = "__{0}__{1}__{2}__{3}__".format(query,testname,schema,runname)
+
+		else:
+			tmp_schema =  schema[:-4]
+			label = "%__{0}__{1}__{2}__".format(testname,tmp_schema,runname)
+			monitor_statement = monitor_statement.replace("ri.label = '","ri.label ILIKE '")
+
 		self.logger.info('Label monitoring: ' + label)
 		monitor_statement = monitor_statement.replace("_LABEL_",label)
-		self.logger.info('Monitoring query: \n' + monitor_statement)
-		#self.logger.info(monitor_statement)
+		#self.logger.info('Monitoring query: \n' + monitor_statement)
 		cursor = self.conn.cursor()
 		#if int(query) in [2,6,11,12,14,15,19,22]:
                		#self.logger.info('Sleeped for 60 seconds')
@@ -89,24 +96,13 @@ class DBPerfComp(object):
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
         
-        	# One column is whole query >> parsing only label from all rows
-		#for row in rows:
-#			start = row[8].find('/*+ label(') + 10
-#			end = row[8].find(') */')#
-#			label = row[8][start:end]		
-#			row[8] = label
-
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
 		# Loading profile path to Excel
-#		if schema == rows[0][9]
-		
-	#	for row in rows:
-	#		self.logger.info('REAL SCHEMA FROM MONITORING: ' + row)
                 loadExplain(schema,testname,rows,listQueries,query,1)            
- # ZDE SMAZAT KOMENTAR           	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
+           	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
 		
-		#self.logger.info('Size of rows: ' + str(len(rows)))
+		self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
 		for row in rows:	
 			query_statement = "insert into %s  (schema_name,start_timestamp,end_timestamp,transaction_id,statement_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time_ms,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
@@ -137,11 +133,11 @@ class DBPerfComp(object):
 				if tpch == 0:
 	                                # Loading query from folder
 	                                statement = self.extract(query)
-					label = "__{0}__{1}__{2}__".format(testname,schema,runname)
+					label = "_{0}__{1}__{2}__".format(testname,schema,runname)
 					self.logger.info('Label query: __' + query+ label)
 					statement = statement.replace("_LABEL_",label)
 					# Executing given query
-					self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
 					if 'DBD' in schema:
 						self.logger.info('[EXECUTE TEST] Time sleep')
@@ -151,7 +147,7 @@ class DBPerfComp(object):
 					for row in rows:
 						self.logger.info(row)
 					#time.sleep(10)
-					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)
+				#	self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)
 					statement = self.extract('snap_insert')
 					self.logger.info('Snap insert statements \n' + statement)
 					cursor.execute(statement)
@@ -160,16 +156,27 @@ class DBPerfComp(object):
 					for j in range(1,23):
 						self.logger.info('[EXECUTE TEST] [ALL - TPC-H queries mode] Query n.: ' + str(j) + ' (iteration n.: ' + str(i+1) + ')')
 						statement = self.extract(j)
-						#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+						label = "_{0}__{1}__{2}__".format(testname,schema,runname)
+	                                        self.logger.info('Label query: __' + query+ label)
+        	                                statement = statement.replace("_LABEL_",label)
+				#		self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 						cursor.execute(statement)
+			#			rows = cursor.fetchall()
+					#	self.logger.info('[EXECUTE TEST] Result: ')
+				#		for row in rows:
+			#				self.logger.info(row)
 						#time.sleep(2)
 						#if j in [2,6,11,12,14,15,19,22]:
                         #                                time.sleep(30)
 			#		for j in range(1,23):
 					#	schema_tmp = schema + '-ALL'
-                                                self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,runname,1)
+                                             #   self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,runname,1)
 			                        statement = self.extract('snap_insert')
                         	                cursor.execute(statement)
+			if tpch == 0:
+				self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)		
+			else:
+				self.monitor(len(listQueries), tablename,testname,schema_tmp,1,listQueries,runname,1)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
 		

@@ -4,10 +4,10 @@ Conf:
     #mode: COMPARE-ALL
 Compare:
     testName: test4_10_12
-    runName: 1
+    runName: 9
     queries: 10 12
     schemas: DBD_test4_10_12 test4_10_12_my1 test4_10_12_my2
-    iteration: 2
+    iteration: 3
 Schema:
     name: test1_3_5_my3
     data_path: /mnt/ebs/vertica/tpch/10g
