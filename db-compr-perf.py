@@ -77,7 +77,7 @@ class DBPerfComp(object):
         	# Adding LIMIT -> store data only for that queries that run in one iteration
         	monitor_statement += " LIMIT 1"
 		monitor_statement = monitor_statement.replace("QUERY", query)
-		self.logger.info('Monitoring query: \n' + monitor_statement)
+		#self.logger.info('Monitoring query: \n' + monitor_statement)
 		#self.logger.info(monitor_statement)
 		cursor = self.conn.cursor()
 		#if int(query) in [2,6,11,12,14,15,19,22]:
@@ -117,11 +117,15 @@ class DBPerfComp(object):
 		cursor.execute('show search_path')
                 rows = cursor.fetchall()
 		for row in rows:
-			self.logger.info('SEARCH PATH:                ' + str(row[0]))
+			for item in rows:
+				self.logger.info('SEARCH PATH:                ' + str(item))
 		cursor.close()
 
 
 	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname,tpch=0):
+		self.logger.info('Snapshot tables being created')		
+		statement = self.extract('snap_create')
+		cursor.execute(statement)
 		self.logger.info('Execute test')
                 for query in listQueries:
 			self.logger.info('[EXECUTE TEST] Query: ' + query)
@@ -132,7 +136,7 @@ class DBPerfComp(object):
 	                                # Loading query from folder
 	                                statement = self.extract(query)
 					# Executing given query
-					self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
 					if 'DBD' in schema:
 						self.logger.info('[EXECUTE TEST] Time sleep')
@@ -143,6 +147,8 @@ class DBPerfComp(object):
 						self.logger.info(row)
 					#time.sleep(10)
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
+					statement = self.extract('snap_insert')
+					cursor.execute(statement)
 				else:
 					schema_tmp = schema + '-ALL'
 					for j in range(1,23):
@@ -156,6 +162,8 @@ class DBPerfComp(object):
 			#		for j in range(1,23):
 					#	schema_tmp = schema + '-ALL'
                                                 self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,1)
+			                        statement = self.extract('snap_insert')
+                        	                cursor.execute(statement)
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
 		
@@ -309,7 +317,7 @@ class DBPerfComp(object):
 			self.logger.info('Actual schema:' + schema)
 			# Setting search path to this schema
 			# Others schemas are out of quering -> in query, there is no FROM <schema_name>.TABLE -> we eliminate it setting searching path
-			schema_statement = "set search_path to public, v_catalog, v_monitor, v_internal, %s" % schema
+			schema_statement = "set search_path to v_catalog, v_monitor, v_internal, %s" % schema
 		    	
 			# Executing SEARCH PATH query
 			cursor.execute(schema_statement)
