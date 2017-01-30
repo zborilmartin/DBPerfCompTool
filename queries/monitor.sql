@@ -3,9 +3,9 @@
 select
   pu.anchor_table_schema as schema_name,
   ri.time as start_timestamp, 
+  nvl(rc.time, getdate()) as endtime,
   ri.transaction_id, 
   ri.statement_id,
-  ri.request_id, 
   datediff('millisecond', ri.time, nvl(rc.time, getdate())) as response_ms,
   ra.memory_inuse_kb::integer as memory_allocated_kb,
   ra.memory_inuse_kb::integer - (rc.reserved_extra_memory/1024)::integer as memory_used_kb,
@@ -38,7 +38,7 @@ left outer join (
   group by transaction_id, statement_id, pool_name
 ) ra
   using (transaction_id, statement_id)
-left outer join (
+join (
   select transaction_id, statement_id,
     avg(cpu_time) as cpu_time
   from (

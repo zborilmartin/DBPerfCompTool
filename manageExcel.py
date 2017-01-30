@@ -92,9 +92,9 @@ def createAVGTable(ws1,column_start,testname):
 	ws1["{0}".format(ws1.cell(row=499, column=column_start).coordinate)]=0
 	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)  
 	ws1.cell(row=500, column=column_start, value="start_timestamp")
-	ws1.cell(row=500, column=column_start+1, value="transaction_id")
-	ws1.cell(row=500, column=column_start+2, value="statement_id")
-    	ws1.cell(row=500, column=column_start+3, value="request_id")    
+	ws1.cell(row=500, column=column_start+1, value="end_timestamp")
+	ws1.cell(row=500, column=column_start+2, value="transaction_id")
+	ws1.cell(row=500, column=column_start+3, value="statement_id")
 	ws1.cell(row=500, column=column_start+4, value="response_ms")
 	ws1.cell(row=500, column=column_start+5, value="memory_allocated_kb")
 	ws1.cell(row=500, column=column_start+6, value="memory_used_kb")
@@ -337,9 +337,7 @@ def loadDataToExcelToParticularTable(row,ws,start_column):
     		# other data type
 		else:   
 			ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
-	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+10-1).coordinate)] = int(row[0])
-	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+10-1).coordinate)].format = bold
-	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+9-1).coordinate)].format = bold
+	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+10-1).coordinate)] = row[0]
 
 
 def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):

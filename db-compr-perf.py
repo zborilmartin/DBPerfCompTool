@@ -58,10 +58,10 @@ class DBPerfComp(object):
 		self.logger.info("[MONITORING QUERY] Test: " + testname)
 		self.logger.info("[MONITORING QUERY] Label/query: " + row[9])
 		self.logger.info("[MONITORING QUERY] Schema (path): " + row[0])
-		self.logger.info("[MONITORING QUERY] Timestamp: " + str(row[1]))
-		self.logger.info("[MONITORING QUERY] Transaction_id: " + str(row[2]))
-        	self.logger.info("[MONITORING QUERY] Statement_id: " + str(row[3]))
-        	self.logger.info("[MONITORING QUERY] Request_id: " + str(row[4]))		
+		self.logger.info("[MONITORING QUERY] Start timestamp: " + str(row[1]))
+		self.logger.info("[MONITORING QUERY] End timestamp: " + str(row[2]))
+		self.logger.info("[MONITORING QUERY] Transaction_id: " + str(row[3]))
+		self.logger.info("[MONITORING QUERY] Statement_id: " + str(row[4]))
 		self.logger.info("[MONITORING QUERY] Query duration (ms): " + str(row[5]))
 		self.logger.info("[MONITORING QUERY] Allocated memory (kb): " + str(row[6]))
 		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[7]))
@@ -97,18 +97,27 @@ class DBPerfComp(object):
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
 		# Loading profile path to Excel
+#		if schema == rows[0][9]
+		
+	#	for row in rows:
+	#		self.logger.info('REAL SCHEMA FROM MONITORING: ' + row)
                 loadExplain(schema,testname,rows,listQueries,query,1)            
             	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
+		
 		#self.logger.info('Size of rows: ' + str(len(rows)))
         	# sending data into the database
 		for row in rows:	
-			query_statement = "insert into %s  (schema_name,start_timestamp,transaction_id,statement_id,request_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time_ms,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
+			query_statement = "insert into %s  (schema_name,start_timestamp,end_timestamp,transaction_id,statement_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time_ms,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
 			query_statement = query_statement.format(*row)
 			#self.logger.info('[MONITORING QUERY] Monitoring query statement: ' + query_statement)
 			self.logInfo(row,tablename,schema,query)
 			
 			cursor.execute(query_statement)
 			cursor.commit() 
+		cursor.execute('show search_path')
+                rows = cursor.fetchall()
+		for row in rows:
+			self.logger.info('SEARCH PATH:                ' + str(row[0]))
 		cursor.close()
 
 
@@ -125,8 +134,14 @@ class DBPerfComp(object):
 					# Executing given query
 					self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
+					if 'DBD' in schema:
+						self.logger.info('[EXECUTE TEST] Time sleep')
+						#time.sleep(60)
 					rows = cursor.fetchall()
-					time.sleep(10)
+					self.logger.info('[EXECUTE TEST] Result: ')
+					for row in rows:
+						self.logger.info(row)
+					#time.sleep(10)
 					self.monitor(len(listQueries), tablename,testname,schema,query,listQueries)
 				else:
 					schema_tmp = schema + '-ALL'
