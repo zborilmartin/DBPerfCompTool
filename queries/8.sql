@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_8_testname_schema_run_) */
+select  /*+ label(__8__LABEL_) */
 	o_year,
 	sum(case
 		when nation = 'SAUDI ARABIA' then volume

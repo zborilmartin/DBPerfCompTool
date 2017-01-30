@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_4_testname_schema_run_) */
+select  /*+ label(__4__LABEL_) */
 	o_orderpriority,
 	count(*) as order_count
 from

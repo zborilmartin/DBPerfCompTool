@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_13_testname_schema_run_) */
+select  /*+ label(__13__LABEL_) */
 	c_count,
 	count(*) as custdist
 from

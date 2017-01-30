@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_3_testname_schema_run_) */
+select  /*+ label(__3__LABEL_) */
 	l_orderkey,
 	sum(l_extendedprice * (1 - l_discount)) as revenue,
 	o_orderdate,

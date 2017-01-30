@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_9_testname_schema_run_) */
+select  /*+ label(__9__LABEL_) */
 	nation,
 	o_year,
 	sum(amount) as sum_profit

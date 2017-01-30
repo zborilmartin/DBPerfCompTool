@@ -5,7 +5,7 @@
 
 
 create view revenue0 (supplier_no, total_revenue) as
-	select  /*+ label(_15_testname_schema_run_) */
+	select  /*+ label(__15__LABEL_) */
 		l_suppkey,
 		sum(l_extendedprice * (1 - l_discount))
 	from

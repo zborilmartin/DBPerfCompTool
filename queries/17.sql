@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_17_testname_schema_run_) */
+select  /*+ label(__17__LABEL_) */
 	sum(l_extendedprice) / 7.0 as avg_yearly
 from
 	lineitem,

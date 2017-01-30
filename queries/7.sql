@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_7_testname_schema_run_) */
+select  /*+ label(__7__LABEL_) */
 	supp_nation,
 	cust_nation,
 	l_year,

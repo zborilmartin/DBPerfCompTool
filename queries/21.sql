@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_21_testname_schema_run_) */
+select  /*+ label(__21__LABEL_) */
 	s_name,
 	count(*) as numwait
 from

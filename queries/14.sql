@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_14_testname_schema_run_) */
+select  /*+ label(__14__LABEL_) */
 	100.00 * sum(case
 		when p_type like 'PROMO%'
 			then l_extendedprice * (1 - l_discount)

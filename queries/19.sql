@@ -4,7 +4,7 @@
 -- Approved February 1998
 
 
-select  /*+ label(_19_testname_schema_run_) */
+select  /*+ label(__19__LABEL_) */
 	sum(l_extendedprice* (1 - l_discount)) as revenue
 from
 	lineitem,

@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_11_testname_schema_run_) */
+select  /*+ label(__11__LABEL_) */
 	ps_partkey,
 	sum(ps_supplycost * ps_availqty) as value
 from

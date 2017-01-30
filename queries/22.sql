@@ -5,7 +5,7 @@
 
 
 
-select  /*+ label(_22_testname_schema_run_) */
+select  /*+ label(__22__LABEL_) */
 	cntrycode,
 	count(*) as numcust,
 	sum(c_acctbal) as totacctbal
