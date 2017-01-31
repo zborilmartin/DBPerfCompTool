@@ -62,8 +62,8 @@ def formatResult(ws,row_number, column_result):
 # Method for setting function AVERAGE for each query and COUNT of queries
 def createAVGandCOUNT(ws1,column_start):
         for i in range (0,4):    
-                ws1['{0}'.format(ws1.cell(row=9, column=column_start+i).coordinate)] = "=AVERAGE({0}:{1})".format(ws1.cell(row=501, column=column_start+4+i).coordinate,ws1.cell(row=10000, column=column_start+4+i).coordinate)
-        ws1['{0}'.format(ws1.cell(row=9, column=column_start+4).coordinate)] = "=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)
+                ws1['{0}'.format(ws1.cell(row=9, column=column_start+i).coordinate)] = "=AVERAGE({0}:{1})".format(ws1.cell(row=1501, column=column_start+4+i).coordinate,ws1.cell(row=10000, column=column_start+4+i).coordinate)
+        ws1['{0}'.format(ws1.cell(row=9, column=column_start+4).coordinate)] = "=COUNT({0}:{1})".format(ws1.cell(row=1501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)
       
         
 # Method for creating average table menu and table where the data are stored + formatting
@@ -88,24 +88,24 @@ def createAVGTable(ws1,column_start,testname):
    	    ws1.cell(row=9,column=cellColumn).number_format = '### ### ### ### ###'
           
 	# Items - line
-    #	ws1.cell(row=499, column=column_start, value=int(0))
-	ws1["{0}".format(ws1.cell(row=499, column=column_start).coordinate)]=0
-	ws1["{0}".format(ws1.cell(row=499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)  
-	ws1.cell(row=500, column=column_start, value="start_timestamp")
-	ws1.cell(row=500, column=column_start+1, value="end_timestamp")
-	ws1.cell(row=500, column=column_start+2, value="transaction_id")
-	ws1.cell(row=500, column=column_start+3, value="statement_id")
-	ws1.cell(row=500, column=column_start+4, value="response_ms")
-	ws1.cell(row=500, column=column_start+5, value="memory_allocated_kb")
-	ws1.cell(row=500, column=column_start+6, value="memory_used_kb")
-	ws1.cell(row=500, column=column_start+7, value="CPU_time")
-    	ws1.cell(row=500, column=column_start+8, value="Label/Query")
-        ws1.cell(row=500, column=column_start+9, value="Table schema")
+    #	ws1.cell(row=1499, column=column_start, value=int(0))
+	ws1["{0}".format(ws1.cell(row=1499, column=column_start).coordinate)]=int(0)
+	ws1["{0}".format(ws1.cell(row=1499, column=column_start+1).coordinate)]="=COUNT({0}:{1})".format(ws1.cell(row=1501, column=column_start+4).coordinate,ws1.cell(row=10000, column=column_start+4).coordinate)  
+	ws1.cell(row=1500, column=column_start, value="start_timestamp")
+	ws1.cell(row=1500, column=column_start+1, value="end_timestamp")
+	ws1.cell(row=1500, column=column_start+2, value="transaction_id")
+	ws1.cell(row=1500, column=column_start+3, value="statement_id")
+	ws1.cell(row=1500, column=column_start+4, value="response_ms")
+	ws1.cell(row=1500, column=column_start+5, value="memory_allocated_kb")
+	ws1.cell(row=1500, column=column_start+6, value="memory_used_kb")
+	ws1.cell(row=1500, column=column_start+7, value="CPU_time")
+    	ws1.cell(row=1500, column=column_start+8, value="Label/Query")
+        ws1.cell(row=1500, column=column_start+9, value="Table schema")
 
     	# Formatting of table where data are stored
     	for cellColumn in range(column_start,column_start+9):
-        	ws1.cell(row=500,column=cellColumn).fill=yellowFill
-            	ws1.cell(row=500,column=cellColumn).font=bold
+        	ws1.cell(row=1500,column=cellColumn).fill=yellowFill
+            	ws1.cell(row=1500,column=cellColumn).font=bold
         
 # Method for creating Overview - Basic page - only Head and DBD
 def createOverview(ws,queries,testname):
@@ -328,16 +328,18 @@ def createProfile(ws1,column_start):
         ws1['{0}'.format(ws1.cell(row=14, column=9).coordinate)] = "=SUM({0}:{1})".format(ws1.cell(row=14, column=1).coordinate,ws1.cell(row=14, column=8).coordinate)
 
 def loadDataToExcelToParticularTable(row,ws,start_column):
-	#ws.cell(row=499,column=start_column).value = 0
-	ws.cell(row=499,column=start_column).value += int(1)
+	#ws.cell(row=1499,column=start_column).value = 0
+	tmp = int(ws.cell(row=1499,column=start_column).value)
+	tmp += 1
+	ws.cell(row=1499,column=start_column).value = tmp
 	for i in range (1,10):
     		# integer data type, 1.column is schema - not storing in Excel file
 		if i in [5,6,7,8]:
-			ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
+			ws['{0}'.format(ws.cell(row=1500+ws.cell(row=1499,column=start_column).value, column=start_column+i-1).coordinate)] = int(row[i])
     		# other data type
 		else:   
-			ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
-	ws['{0}'.format(ws.cell(row=500+ws.cell(row=499,column=start_column).value, column=start_column+10-1).coordinate)] = row[0]
+			ws['{0}'.format(ws.cell(row=1500+ws.cell(row=1499,column=start_column).value, column=start_column+i-1).coordinate)] = row[i]    
+	ws['{0}'.format(ws.cell(row=1500+ws.cell(row=1499,column=start_column).value, column=start_column+10-1).coordinate)] = row[0]
 
 
 def loadDataToExcel(rows,query,schema,testname,queries,tpch=0):
@@ -459,47 +461,47 @@ def formatQueryProfilePlan(ws1):
 	dxf = DifferentialStyle(fill=yellowFill)
 	rule = Rule(type="containsText", operator="containsText", text="> JOIN", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("> JOIN",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 
 	dxf = DifferentialStyle(fill=lightblueFill)
 	rule = Rule(type="containsText", operator="containsText", text="Filter", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("Filter",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)       
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)       
 	
 	dxf = DifferentialStyle(fill=orangeFill)
 	rule = Rule(type="containsText", operator="containsText", text="Join Cond", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("Join Cond",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	
 	dxf = DifferentialStyle(fill=pinkFill)
 	rule = Rule(type="containsText", operator="containsText", text="Projection:", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("Projection:",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	
 	dxf = DifferentialStyle(fill=lightgreenFill)
 	rule = Rule(type="containsText", operator="containsText", text="SELECT", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("SELECT",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	
 	dxf = DifferentialStyle(fill=darkredFill)
 	rule = Rule(type="containsText", operator="containsText", text="SORT [", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("SORT [",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	
 	dxf = DifferentialStyle(fill=redFill)
 	rule = Rule(type="containsText", operator="containsText", text="> GROUPBY", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("> GROUPBY",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	
 	dxf = DifferentialStyle(fill=blueFill)
 	rule = Rule(type="containsText", operator="containsText", text="Outer -> STORAGE", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("Outer -> STORAGE",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	
 	dxf = DifferentialStyle(fill=greenFill)
 	rule = Rule(type="containsText", operator="containsText", text="Inner -> STORAGE", dxf=dxf)
 	rule.formula = ['NOT(ISERROR(SEARCH("Inner -> STORAGE",A19)))']
-	ws1.conditional_formatting.add('A19:ZZ499', rule)
+	ws1.conditional_formatting.add('A19:ZZ1499', rule)
 	# end 	
 	
 	return ws1
@@ -579,7 +581,7 @@ def createExcelFile(testname,queries):
                 patternAll = wb.copy_worksheet(ws1)
 		patternAll.title = "Pattern-ALL"
 
-		for row in patternAll.iter_rows('{0}:{1}'.format(patternAll.cell(row=5, column=11).coordinate,patternAll.cell(row=500, column=((len(queries)+1)*10)).coordinate)):
+		for row in patternAll.iter_rows('{0}:{1}'.format(patternAll.cell(row=5, column=11).coordinate,patternAll.cell(row=1500, column=((len(queries)+1)*10)).coordinate)):
                         #if len(queries) == 1:
                         #        break
 			for cell in row:

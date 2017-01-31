@@ -65,7 +65,9 @@ class DBPerfComp(object):
 		self.logger.info("[MONITORING QUERY] Query duration (ms): " + str(row[5]))
 		self.logger.info("[MONITORING QUERY] Allocated memory (kb): " + str(row[6]))
 		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[7]))
-		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8]) + '\n \n')	
+		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8]))
+		self.logger.info('\n')
+		self.logger.info('\n')
 
             
 	# Method for sending data into the database
@@ -74,8 +76,6 @@ class DBPerfComp(object):
 		self.logger.info('Query monitoring started')
         	# Storing query for monitoring database 
 		monitor_statement = self.extract('monitor_snap')
-        	# Adding LIMIT -> store data only for that queries that run in one iteration
-        	#monitor_statement += " LIMIT 1"
 		label = ""
 		if tpch == 0:	
 			label = "__{0}__{1}__{2}__{3}__".format(query,testname,schema,runname)
@@ -89,10 +89,6 @@ class DBPerfComp(object):
 		monitor_statement = monitor_statement.replace("_LABEL_",label)
 		#self.logger.info('Monitoring query: \n' + monitor_statement)
 		cursor = self.conn.cursor()
-		#if int(query) in [2,6,11,12,14,15,19,22]:
-               		#self.logger.info('Sleeped for 60 seconds')
-			#time.sleep(60)
-			#time.sleep(10)
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
         
@@ -112,11 +108,11 @@ class DBPerfComp(object):
 			
 			cursor.execute(query_statement)
 			cursor.commit() 
-		cursor.execute('show search_path')
-                rows = cursor.fetchall()
-		for row in rows:
-			for item in rows:
-				self.logger.info('SEARCH PATH:                ' + str(item))
+		#cursor.execute('show search_path')
+                #rows = cursor.fetchall()
+		#for row in rows:
+			#for item in rows:
+				#self.logger.info('SEARCH PATH: ' + str(item))
 		cursor.close()
 
 
@@ -139,18 +135,16 @@ class DBPerfComp(object):
 					# Executing given query
 					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
-					if 'DBD' in schema:
-						self.logger.info('[EXECUTE TEST] Time sleep')
-						#time.sleep(60)
-					rows = cursor.fetchall()
+					#rows = cursor.fetchall()
 					self.logger.info('[EXECUTE TEST] Result: ')
 					for row in rows:
 						self.logger.info(row)
-					#time.sleep(10)
-				#	self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)
+
 					statement = self.extract('snap_insert')
-					self.logger.info('Snap insert statements \n' + statement)
+					self.logger.info('Inserting data to snapshot tables (from system tables)')
+					#self.logger.info('Snap insert statements \n' + statement)
 					cursor.execute(statement)
+				#self.logger.info('[EXECUTE TEST] Iteration finished')
 				else:
 					schema_tmp = schema + '-ALL'
 					for j in range(1,23):
@@ -159,24 +153,25 @@ class DBPerfComp(object):
 						label = "_{0}__{1}__{2}__".format(testname,schema,runname)
 	                                        self.logger.info('Label query: __' + query+ label)
         	                                statement = statement.replace("_LABEL_",label)
-				#		self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
+						#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 						cursor.execute(statement)
-			#			rows = cursor.fetchall()
-					#	self.logger.info('[EXECUTE TEST] Result: ')
-				#		for row in rows:
-			#				self.logger.info(row)
-						#time.sleep(2)
-						#if j in [2,6,11,12,14,15,19,22]:
-                        #                                time.sleep(30)
-			#		for j in range(1,23):
-					#	schema_tmp = schema + '-ALL'
-                                             #   self.monitor(len(listQueries), tablename,testname,schema_tmp,str(j),listQueries,runname,1)
+						#rows = cursor.fetchall()
+						#self.logger.info('[EXECUTE TEST] Result: ')
+						#for row in rows:
+							#self.logger.info(row)
 			                        statement = self.extract('snap_insert')
                         	                cursor.execute(statement)
+						self.logger.info('[EXECUTE TEST] Query finished')
+						self.logger.info('\n')
+						self.logger.info('\n')
 			if tpch == 0:
 				self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)		
 			else:
 				self.monitor(len(listQueries), tablename,testname,schema_tmp,1,listQueries,runname,1)
+
+			self.logger.info('[EXECUTE TEST] Monitoring finished')
+			self.logger.info('\n')
+			self.logger.info('\n')
 
 	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
 		
@@ -223,7 +218,7 @@ class DBPerfComp(object):
 				statement = self.extract(query)
                 
                 		# Adding prefixes to query
-				statement_profile = "PROFILE " + statement 
+		#		statement_profile = "PROFILE " + statement 
 				statement_explain = "EXPLAIN " + statement
 				statement_explain_verbose = "EXPLAIN VERBOSE " + statement
 				# Executing PROFILE QUERY
@@ -255,60 +250,71 @@ class DBPerfComp(object):
                                 	explainVerboseFile.close()
 
 					rows_explain = rows
+					#for row in rows:
+						#for item in row:
+							#self.logger.info('EXPLAIN: ' + item)
 				
 				# Loading query for creating table in schema above
-				create_table_statement = self.extract('monitor_profile_create')
+	#			create_table_statement = self.extract('monitor_profile_create')
 
 				# Setting table name which will be in creating query
-				tablename = '{0}.{1}_{2}_{3}'.format(output_schema,testname,schema,query)
+	#			tablename = '{0}.{1}_{2}_{3}'.format(output_schema,testname,schema,query)
 					    
 				# In creat-table query is: TABLENAME
 				# This text is replaced whith name that we want
-				create_table_statement = create_table_statement.replace("TABLENAME", tablename)
+	#			create_table_statement = create_table_statement.replace("TABLENAME", tablename)
 					    
 				# Executing Create-table query
-				cursor.execute(create_table_statement)	
+	#			cursor.execute(create_table_statement)	
 				
 				# Executing PROFILE QUERY
-				cursor.commit()
-				cursor.execute(statement_profile)		
-				cursor.commit()
-				cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
+	#			cursor.commit()
+	#			cursor.execute(statement_profile)		
+	#			cursor.commit()
+	#			cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
 
 				# Loading data from database
-				rows = cursor.fetchall()
+	#			rows = cursor.fetchall()
 
                 		# transaction_id and statement_id of executed profile query
-				TRANS_ID = rows[0][0]
-				STATEM_ID = rows[0][1]
+	#			TRANS_ID = rows[0][0]
+	#			STATEM_ID = rows[0][1]
 				
 
+	#			statement = self.extract('monitor_profile_snap_create')
+	#			cursor.execute(statement)
+
+	#			statement = self.extract('monitor_profile_snap_insert')
+         #                       cursor.execute(statement)
+
 				# Loading query for profile output
-				monitor_statement_statement = self.extract('monitor_profile')
+	#			monitor_statement_statement = self.extract('monitor_profile')
 				
 				 # In creat-table query is: TRANSACTION_NUMBER,STATEMENT_NUMBER
 				 # This text is replaced with name that we want
-				monitor_statement_statement = monitor_statement_statement.replace("TRANSACTION_NUMBER", str(TRANS_ID))
+	#			monitor_statement_statement = monitor_statement_statement.replace("TRANSACTION_NUMBER", str(TRANS_ID))
 				#monitor_statement_statement = monitor_statement_statement.replace("STATEMENT_NUMBER", str(STATEM_ID))
-				monitor_statement_statement = monitor_statement_statement.replace("running_time", "running_time::VARCHAR")
-				monitor_statement_statement = monitor_statement_statement.replace("memory_allocated_bytes", "memory_allocated_bytes::VARCHAR")
-				monitor_statement_statement = monitor_statement_statement.replace("read_from_disk_bytes", "read_from_disk_bytes::VARCHAR")
+	#			monitor_statement_statement = monitor_statement_statement.replace("running_time", "running_time::VARCHAR")
+	#			monitor_statement_statement = monitor_statement_statement.replace("memory_allocated_bytes", "memory_allocated_bytes::VARCHAR")
+	#			monitor_statement_statement = monitor_statement_statement.replace("read_from_disk_bytes", "read_from_disk_bytes::VARCHAR")
 
 
 				# Executing MONITOR PROFILE QUERY
-				cursor.execute(monitor_statement_statement)
+	#			cursor.execute(monitor_statement_statement)
+	
+	#			self.logger.info('[Execute Explain Profile] Profiling is done')	
 
 				# Loading data from database
-				rows = cursor.fetchall()
+	#			rows = cursor.fetchall()
 
                 		# Sending Query Profil Plan to datbase
-				for row in rows:
-					query_text = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
-					row[3] = row[3].replace("'", "/")
-					query_text = query_text.format(*row)
-					query_text = query_text.replace("TABLENAME", tablename)
-					cursor.execute(query_text)
-					cursor.commit()
+	#			for row in rows:
+	#				query_text = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
+	#				row[3] = row[3].replace("'", "/")
+	#				query_text = query_text.format(*row)
+	#				query_text = query_text.replace("TABLENAME", tablename)
+	#				cursor.execute(query_text)
+	#				cursor.commit()
 
 	           		# Creating new sheet in specific XLSX file 
                 		duplicatePattern(schema,testname,listQueries,query)
@@ -476,13 +482,15 @@ class DBPerfComp(object):
 		statement = self.extract(schema)
 		cursor.execute("CREATE SCHEMA IF NOT EXISTS {0}".format(name))
 		statement = statement.replace("myschema", name)
-		self.logger.info('[SCHEMA] CREATE SCHEMA QUERY \n: ' + statement)
+		#self.logger.info('[SCHEMA] CREATE SCHEMA QUERY \n: ' + statement)
+		self.logger.info('[SCHEMA] Schema is being created')
 		cursor.execute(statement)
 		self.logger.info('[SCHEMA] DONE - CREATE SCHEMA')
                 statement2 = self.extract(copy_query)
                 statement2 = statement2.replace("myschema", name)
                 statement2 = statement2.replace("mypath", data)
-                self.logger.info('[SCHEMA] COPY DATA QUERY \n: ' + statement2)
+                #self.logger.info('[SCHEMA] COPY DATA QUERY \n: ' + statement2)
+		self.logger.info('[SCHEMA] Data are being copied')
 		cursor.execute(statement2)
 		self.logger.info('[SCHEMA] DONE - COPY DATA')
 
@@ -525,10 +533,22 @@ class DBPerfComp(object):
 		if previous_schema_occurs == 1:
 	                statement = statement.replace(previous_schema_name, actual_schema_name)
 			self.logger.info('[CONFIG-DEPLOYMENT] Previous schema name: ' + previous_schema_name)
-            
+            	self.logger.info('[DEPLOYMENT] Deployment in progress')
 		cursor.execute(statement)
 		self.logger.info('[DEPLOYMENT] Query executed')
 
+	def verifyInput(self):
+		userInput = ""
+		while True:
+			userInput = raw_input("Please confirm parameters from your Config file (yes/no): ")	
+			if userInput.upper() in ["Y","YE","YES"]:
+				print "Parameters confirmed"
+				return True
+			elif userInput.upper() in ["N","NO"]:
+				print "Parameters not confirmed. Program exit."
+				return False
+			else:
+				print "Please insert yes or no!"
 
 	def main(self):
 		logging.basicConfig(level=logging.INFO)
@@ -551,10 +571,14 @@ class DBPerfComp(object):
 				for query in self.queries:
 					self.logger.info('[CONFIG-COMPARE] Query: %s' % query)
 			if mode.upper() == 'COMPARE':
+				if self.verifyInput() == False:
+					exit()
 				createExcelFile(self.testname, self.queries)
 				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles",self.runname)		
 				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output",self.runname)
 			if mode.upper() == 'COMPARE-ALL':
+                                if self.verifyInput() == False:
+                                        exit()
 				createExcelFile(self.testname, self.queries)
 				self.runQuery(['tpch_small'],self.schemas,self.iteration,self.testname,"monitoring_output",self.runname,1)
 			if mode.upper() == 'SCHEMA':
@@ -562,6 +586,8 @@ class DBPerfComp(object):
 				self.logger.info('[CONFIG-SCHEMA] Path of data to copy to database: %s' % self.data_path)
 				self.logger.info('[CONFIG-SCHEMA] Path of schema to create: %s' % self.schema_path)
 				self.logger.info('[CONFIG-SCHEMA] Path of copy query: %s' % self.copy_query_path)
+                                if self.verifyInput() == False:
+                                        exit()
 				self.createSchema(self.name,self.data_path,self.schema_path,self.copy_query_path)
 			if mode.upper() == 'DESIGN':
 				self.logger.info('[CONFIG-DESIGN] Deisng name: ' + self.design_name)
@@ -575,12 +601,15 @@ class DBPerfComp(object):
 				for query in self.design_queries:
 					self.logger.info('[CONFIG-DESIGN] Query: ' + query)
 				self.logger.info('[CONFIG-DESIGN] Design schema: ' + self.design_schema)
-
+                                if self.verifyInput() == False:
+                                        exit()
 				self.createDesign(self.design_name, self.query_path, self.typeDesign, self.objective, self.deploy_path, self.deployment, self.tables,self.design_queries,self.design_schema)
 			if mode.upper() == 'DEPLOYMENT':
 				self.logger.info('[CONFIG-DEPLOYMENT] Query path: ' + self.query_deployment_path)
 				self.logger.info('[CONFIG-DEPLOYMENT] Actual schema name: ' + self.actual_schema_name)
 				self.logger.info('[CONFIG-DEPLOYMENT] Previous schema occurs (1-true/0-false): ' + str(self.previous_schema_occurs))
+                                #if self.verifyInput() == False:
+                                #        exit()
 				self.deploy(self.query_deployment_path,self.previous_schema_occurs,self.actual_schema_name,self.previous_schema_name)
 
 	def __del__(self):
