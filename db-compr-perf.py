@@ -31,10 +31,11 @@ class DBPerfComp(object):
 		
 	# Extracting query from specific file
 	def extract(self,queryName):
-		# Queries must be stored in folder 'queries'
+		# If query does not end with '.sql', it is added
 		if (len(str(queryName)) < 4) or (str(queryName)[-4:] != '.sql'):
 			queryName = str(queryName) + '.sql'
 
+		# If query does not start with '/', it takes queries from the file 'queries' 
 		if str(queryName)[0] == '/':
 			sqlFile = open('%s' % queryName);
 		else:
@@ -65,21 +66,23 @@ class DBPerfComp(object):
 		self.logger.info("[MONITORING QUERY] Query duration (ms): " + str(row[5]))
 		self.logger.info("[MONITORING QUERY] Allocated memory (kb): " + str(row[6]))
 		self.logger.info("[MONITORING QUERY] Used memory (kb): " + str(row[7]))
-		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8]))
-		self.logger.info('\n')
-		self.logger.info('\n')
+		self.logger.info("[MONITORING QUERY] CPU time: " + str(row[8])+'\n')
 
             
 	# Method for sending data into the database
     	# calling method loadDataToExcel - loading data from monitoring into excel file
 	def monitor(self, length, tablename, testname,schema,query,listQueries,runname,tpch=0):
 		self.logger.info('Query monitoring started')
-        	# Storing query for monitoring database 
+        	# Extracting monitoring query
+	   	# In the statement, the LABEL must be replaced 
 		monitor_statement = self.extract('monitor_snap')
 		label = ""
+
+		# Label in form __query__testname__schema__runname__ for test with single queries
 		if tpch == 0:	
 			label = "__{0}__{1}__{2}__{3}__".format(query,testname,schema,runname)
 
+		# Label in form __testname__schema__runname__ for test with all TPC-H queries
 		else:
 			tmp_schema =  schema[:-4]
 			label = "%__{0}__{1}__{2}__".format(testname,tmp_schema,runname)
@@ -87,19 +90,25 @@ class DBPerfComp(object):
 
 		self.logger.info('Label monitoring: ' + label)
 		monitor_statement = monitor_statement.replace("_LABEL_",label)
+
 		#self.logger.info('Monitoring query: \n' + monitor_statement)
+
 		cursor = self.conn.cursor()
 		cursor.execute(monitor_statement)
 		rows = cursor.fetchall()
         
                 # Creating new sheet in specific XLSX file 
                 duplicatePattern(schema,testname,listQueries,query)
-		# Loading profile path to Excel
+
+		# Sending Explain Verbose output to Excel
                 loadExplain(schema,testname,rows,listQueries,query,1)            
+
+		# Sending monitor data to Excel
            	loadDataToExcel(rows,query,schema,testname,listQueries,tpch)
 		
 		self.logger.info('Size of rows: ' + str(len(rows)))
-        	# sending data into the database
+
+        	# Sending data to the database
 		for row in rows:	
 			query_statement = "insert into %s  (schema_name,start_timestamp,end_timestamp,transaction_id,statement_id,response_ms,memory_allocated_kb,memory_used_kb,cpu_time_ms,label) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}','{6}', '{7}', '{8}','{9}')" % (tablename)
 			query_statement = query_statement.format(*row)
@@ -108,37 +117,39 @@ class DBPerfComp(object):
 			
 			cursor.execute(query_statement)
 			cursor.commit() 
-		#cursor.execute('show search_path')
-                #rows = cursor.fetchall()
-		#for row in rows:
-			#for item in rows:
-				#self.logger.info('SEARCH PATH: ' + str(item))
 		cursor.close()
 
-
+	# Method for executing TPC-H queries and monitoring them 
 	def executeTest(self,iteration,listQueries,cursor,tablename,schema,testname,runname,tpch=0):
+
+		# Creation of snapshot tables for storing monitoring data
 		self.logger.info('Snapshot tables being created')		
 		statement = self.extract('snap_create')
 		cursor.execute(statement)
+
+
 		self.logger.info('Execute test')
                 for query in listQueries:
 			self.logger.info('[EXECUTE TEST] Query: ' + query)
 			# For each iteration which is given in Config file
                 	for i in range(0,iteration):
 				self.logger.info('[EXECUTE TEST] Iteration n.: ' + str(i+1))
+
+				# In this step, running TPC-H query
 				if tpch == 0:
 	                                # Loading query from folder
 	                                statement = self.extract(query)
+
+					# Replacement of query
 					label = "_{0}__{1}__{2}__".format(testname,schema,runname)
 					self.logger.info('Label query: __' + query+ label)
 					statement = statement.replace("_LABEL_",label)
+
 					# Executing given query
 					#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 					cursor.execute(statement)
-					#rows = cursor.fetchall()
-					self.logger.info('[EXECUTE TEST] Result: ')
-					for row in rows:
-						self.logger.info(row)
+					rows = cursor.fetchall()
+					self.logger.info('[EXECUTE TEST] Number of rows of result: ' + str(len(rows)))
 
 					statement = self.extract('snap_insert')
 					self.logger.info('Inserting data to snapshot tables (from system tables)')
@@ -155,34 +166,30 @@ class DBPerfComp(object):
         	                                statement = statement.replace("_LABEL_",label)
 						#self.logger.info('[EXECUTE TEST] Execute query statement: ' + statement)
 						cursor.execute(statement)
-						#rows = cursor.fetchall()
-						#self.logger.info('[EXECUTE TEST] Result: ')
-						#for row in rows:
-							#self.logger.info(row)
 			                        statement = self.extract('snap_insert')
                         	                cursor.execute(statement)
-						self.logger.info('[EXECUTE TEST] Query finished')
-						self.logger.info('\n')
-						self.logger.info('\n')
+						self.logger.info('[EXECUTE TEST] Query finished \n')
+
+			# In this step, monitoring executed query
 			if tpch == 0:
 				self.monitor(len(listQueries), tablename,testname,schema,query,listQueries,runname)		
 			else:
 				self.monitor(len(listQueries), tablename,testname,schema_tmp,1,listQueries,runname,1)
 
-			self.logger.info('[EXECUTE TEST] Monitoring finished')
-			self.logger.info('\n')
-			self.logger.info('\n')
-
-	def executeExplainProfile(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
-		
-		if not os.path.exists('./ExplainProfile'):
-			os.makedirs('./ExplainProfile')
-		if not os.path.exists('./ExplainProfile/%s' % testname):
-			os.makedirs('./ExplainProfile/%s' % testname)
+			self.logger.info('[EXECUTE TEST] Monitoring finished \n')
 
 
-		self.logger.info('Before file Size')	
-                fileSize = './ExplainProfile/{0}/Projection_size_{1}_{2}.txt'.format(testname,testname,schema)	
+	# Method for executing EXPLAIN, EXPLAIN VERBOSE and getting projections size
+	# Storing data into file 'ExplainFiles/(testname)'
+	def executeExplain(self,listQueries,cursor,tablename,schema,testname,output_schema,tpch=0):
+		# Files creation
+		if not os.path.exists('./ExplainFiles'):
+			os.makedirs('./ExplainFiles')
+		if not os.path.exists('./ExplainFiles/%s' % testname):
+			os.makedirs('./ExplainFiles/%s' % testname)
+
+	
+                fileSize = './ExplainFiles/{0}/Projection_size_{1}_{2}.txt'.format(testname,testname,schema)	
 		if not os.path.exists(fileSize):	
 			self.logger.info('Projection size file is being created')	
 			monitor_statement_statement = self.extract('monitor_projections_size')
@@ -208,9 +215,11 @@ class DBPerfComp(object):
 
 		for query in listQueries:
 			self.logger.info('[Execute Explain Profile] Query: ' + query)
+
             		# Setting path of the output for Explain
-			fileExplain = './ExplainProfile/{0}/Explain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
-			fileVerboseExplain = './ExplainProfile/{0}/VerboseExplain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
+			fileExplain = './ExplainFiles/{0}/Explain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
+			fileVerboseExplain = './ExplainFiles/{0}/VerboseExplain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
+
             		# The rest of this method is executed only if the statement is true
             		# Important assumption: if there is no Explain file, there is also no Explain Verbose file, Query Profile Plan in the database and EXCEL (XLSX) sheet in the Excel file (and vice versa)
 			if (not os.path.exists(fileExplain)) or (not os.path.exists(fileVerboseExplain)):
@@ -218,10 +227,10 @@ class DBPerfComp(object):
 				statement = self.extract(query)
                 
                 		# Adding prefixes to query
-		#		statement_profile = "PROFILE " + statement 
 				statement_explain = "EXPLAIN " + statement
 				statement_explain_verbose = "EXPLAIN VERBOSE " + statement
-				# Executing PROFILE QUERY
+
+				# Executing EXPAIN QUERY
 				cursor.execute(statement_explain)
 				# Loading data from database
 				rows = cursor.fetchall()
@@ -232,8 +241,6 @@ class DBPerfComp(object):
 						explainFile.write(row[0]+'\n')
 				explainFile.close()
 
-                                fileVerboseExplain = './ExplainProfile/{0}/VerboseExplain_{1}_{2}_{3}.txt'.format(testname,testname,schema,query)
-
 				rows_explain = []			
 
                                 if not os.path.exists(fileVerboseExplain):
@@ -243,78 +250,13 @@ class DBPerfComp(object):
 					# Loading data from database
 					rows = cursor.fetchall()
 
-                                    # Writing into Explain Verbose file
+                                        # Writing into Explain Verbose file
                                 	with open(fileVerboseExplain, "w+") as explainVerboseFile:
                                         	for row in rows:
                                                 	explainVerboseFile.write(row[0]+'\n')
                                 	explainVerboseFile.close()
 
 					rows_explain = rows
-					#for row in rows:
-						#for item in row:
-							#self.logger.info('EXPLAIN: ' + item)
-				
-				# Loading query for creating table in schema above
-	#			create_table_statement = self.extract('monitor_profile_create')
-
-				# Setting table name which will be in creating query
-	#			tablename = '{0}.{1}_{2}_{3}'.format(output_schema,testname,schema,query)
-					    
-				# In creat-table query is: TABLENAME
-				# This text is replaced whith name that we want
-	#			create_table_statement = create_table_statement.replace("TABLENAME", tablename)
-					    
-				# Executing Create-table query
-	#			cursor.execute(create_table_statement)	
-				
-				# Executing PROFILE QUERY
-	#			cursor.commit()
-	#			cursor.execute(statement_profile)		
-	#			cursor.commit()
-	#			cursor.execute("SELECT transaction_id, statement_id FROM QUERY_PROFILES WHERE query ILIKE 'PROFILE%' ORDER BY query_start DESC LIMIT 1")
-
-				# Loading data from database
-	#			rows = cursor.fetchall()
-
-                		# transaction_id and statement_id of executed profile query
-	#			TRANS_ID = rows[0][0]
-	#			STATEM_ID = rows[0][1]
-				
-
-	#			statement = self.extract('monitor_profile_snap_create')
-	#			cursor.execute(statement)
-
-	#			statement = self.extract('monitor_profile_snap_insert')
-         #                       cursor.execute(statement)
-
-				# Loading query for profile output
-	#			monitor_statement_statement = self.extract('monitor_profile')
-				
-				 # In creat-table query is: TRANSACTION_NUMBER,STATEMENT_NUMBER
-				 # This text is replaced with name that we want
-	#			monitor_statement_statement = monitor_statement_statement.replace("TRANSACTION_NUMBER", str(TRANS_ID))
-				#monitor_statement_statement = monitor_statement_statement.replace("STATEMENT_NUMBER", str(STATEM_ID))
-	#			monitor_statement_statement = monitor_statement_statement.replace("running_time", "running_time::VARCHAR")
-	#			monitor_statement_statement = monitor_statement_statement.replace("memory_allocated_bytes", "memory_allocated_bytes::VARCHAR")
-	#			monitor_statement_statement = monitor_statement_statement.replace("read_from_disk_bytes", "read_from_disk_bytes::VARCHAR")
-
-
-				# Executing MONITOR PROFILE QUERY
-	#			cursor.execute(monitor_statement_statement)
-	
-	#			self.logger.info('[Execute Explain Profile] Profiling is done')	
-
-				# Loading data from database
-	#			rows = cursor.fetchall()
-
-                		# Sending Query Profil Plan to datbase
-	#			for row in rows:
-	#				query_text = "INSERT INTO TABLENAME (running_time,memory_allocated_bytes,read_from_disk_bytes,path_line) VALUES ('{0}','{1}','{2}','{3}')"
-	#				row[3] = row[3].replace("'", "/")
-	#				query_text = query_text.format(*row)
-	#				query_text = query_text.replace("TABLENAME", tablename)
-	#				cursor.execute(query_text)
-	#				cursor.commit()
 
 	           		# Creating new sheet in specific XLSX file 
                 		duplicatePattern(schema,testname,listQueries,query)
@@ -331,7 +273,8 @@ class DBPerfComp(object):
 		# Output_schema =  Name of schema where to load monitoring data
 	        # Creating schema in database
 		cursor.execute("CREATE SCHEMA IF NOT EXISTS %s" % output_schema)
-       		 # For each schema which is given in Config file
+
+       		# For each schema which is given in Config file
 		for schema in listSchemas:
 			self.logger.info('Actual schema:' + schema)
 			# Setting search path to this schema
@@ -360,10 +303,12 @@ class DBPerfComp(object):
 			if output_schema == "monitoring_output":
 				self.executeTest(iteration,listQueries,cursor,tablename,schema,testname,runname,tpch)
 			
-			if output_schema == "monitoring_profiles":
-				self.executeExplainProfile(listQueries,cursor,tablename,schema,testname,output_schema,tpch)
+			if output_schema == "monitoring_explain":
+				self.executeExplain(listQueries,cursor,tablename,schema,testname,output_schema,tpch)
                 cursor.close()
                 
+
+	# Method for parsing arguments from CONFIG file	
     	def parserYAML(self, file):
         	try:
 			# Opening file
@@ -374,7 +319,6 @@ class DBPerfComp(object):
 			yamlFile.close()
 			if not confData:
 				raise Exception('Data not loaded')
-			# Setting variables querise, testname, iteration, schemas
 
                         mode_unparsed = confData['Conf']['mode']
                         self.modes = []
@@ -476,16 +420,23 @@ class DBPerfComp(object):
 		    	print "File was not loaded" 
 		    	exit() 
 
+
+	# Method for creating new schema - SCHEMA mode
 	def createSchema(self,name,data,schema,copy_query):
                 cursor = self.conn.cursor()
-		# Loading query for profile output
+
+		# Loading file where the query for creating schema is stored
+		# To be universal, in the query you may insert 'myschema' as schema for all tables -> 'myschema' is replaced with inserted schema name into the config file
 		statement = self.extract(schema)
 		cursor.execute("CREATE SCHEMA IF NOT EXISTS {0}".format(name))
 		statement = statement.replace("myschema", name)
+
 		#self.logger.info('[SCHEMA] CREATE SCHEMA QUERY \n: ' + statement)
 		self.logger.info('[SCHEMA] Schema is being created')
 		cursor.execute(statement)
 		self.logger.info('[SCHEMA] DONE - CREATE SCHEMA')
+
+		# Loading file where the query for copying data is stored
                 statement2 = self.extract(copy_query)
                 statement2 = statement2.replace("myschema", name)
                 statement2 = statement2.replace("mypath", data)
@@ -494,6 +445,8 @@ class DBPerfComp(object):
 		cursor.execute(statement2)
 		self.logger.info('[SCHEMA] DONE - COPY DATA')
 
+
+	# Method for creating new DB design - DESIGN mode
 	def createDesign(self,design_name,query_path,typeDesign,objective,deploy_path,deployment,tables,design_queries,schema):
                 cursor = self.conn.cursor()
 		try:
@@ -523,13 +476,14 @@ class DBPerfComp(object):
 		self.logger.info('[DESIGN] DESIGNER_RUN_POPULATE_DESIGN_AND_DEPLOY: path = ' + deploy_path)
 		self.logger.info('[DESIGN] Desing created')
 
+	# Method for deployment - DELPOYMENT mode
 	def deploy(self,query_deployment_path,previous_schema_occurs,actual_schema_name,previous_schema_name):
 		cursor = self.conn.cursor()
 
 		# Extracting deployment query
 		statement = self.extract(query_deployment_path)
 
-		# If 1 - replacement of old schema name with new schema name in query 
+		# If 1 - replacement of old schema name with new schema name in deployment query 
 		if previous_schema_occurs == 1:
 	                statement = statement.replace(previous_schema_name, actual_schema_name)
 			self.logger.info('[CONFIG-DEPLOYMENT] Previous schema name: ' + previous_schema_name)
@@ -537,6 +491,8 @@ class DBPerfComp(object):
 		cursor.execute(statement)
 		self.logger.info('[DEPLOYMENT] Query executed')
 
+
+	# Method for verifying input from config file
 	def verifyInput(self):
 		userInput = ""
 		while True:
@@ -574,7 +530,7 @@ class DBPerfComp(object):
 				if self.verifyInput() == False:
 					exit()
 				createExcelFile(self.testname, self.queries)
-				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_profiles",self.runname)		
+				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_explain",self.runname)		
 				self.runQuery(self.queries,self.schemas,self.iteration,self.testname,"monitoring_output",self.runname)
 			if mode.upper() == 'COMPARE-ALL':
                                 if self.verifyInput() == False:

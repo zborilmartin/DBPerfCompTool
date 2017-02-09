@@ -1,25 +1,28 @@
 Conf: 
 #    mode:  SCHEMA DEPLOYMENT COMPARE
-    mode: COMPARE
+   #  mode: COMPARE
+ #   mode: SCHEMA DEPLOYMENT
+  #  mode: DEPLOYMENT
+    mode: SCHEMA
     #mode: COMPARE-ALL
 Compare:
-    testName: test4_10_12
-    runName: 9
-    queries: 10 12
-    schemas: DBD_test4_10_12 test4_10_12_my1 test4_10_12_my2
-    iteration: 3
+    testName: test8_7_18_custo
+    runName: 40
+    queries: 7 18
+    schemas: DBD_test8_7_18_customized DBD_test8_7_18
+    iteration: 10
 Schema:
-    name: test1_3_5_my3
+    name: DBD_test1_3_5_pk
     data_path: /mnt/ebs/vertica/tpch/10g
-    schema_path: tpch-data-model-vertica_customized
+    schema_path: tpch-data-model-common
     copy_query_path: copy_tpch_data_cluster
 Deployment:
-    query_deployment_path: /home/martin.zboril/vertica_output/test1/test1_3_5_my3.sql
+    query_deployment_path: /home/martin.zboril/vertica_output/test5/test5_3_12_21_my16.sql
     previous_schema_occurs: 1
-    actual_schema_name: test1_3_5_my3
-    previous_schema_name: DBD
+    actual_schema_name: test5_3_12_21_my16
+    previous_schema_name: DBD_t5_3_12_21
 Design:
-    design_name: my1
+    design_name: my
     design_schema: DBD
     design_schema_target: DBD
     tables: LINEITEM REGION CUSTOMER PARTSUPP PART ORDERS NATION SUPPLIER
