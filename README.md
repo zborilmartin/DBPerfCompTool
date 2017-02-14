@@ -191,12 +191,6 @@ All attributes in the Config file must be filled. The mode of the tool is config
 
 Example of configuration structure:
 
-    Conf:
-        testName: test
-        queries: query1 query2 query3
-        schemas: schema1 schema 2
-        iteration: 10
-
     Conf: 
             mode:  SCHEMA DEPLOYMENT COMPARE
     Compare:
