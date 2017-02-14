@@ -20,7 +20,7 @@ This DBPerCompTool tool can be used for work with Vertica database and was writt
 
 Modules Openpyxl and Pyodbc are included in the folder *Requirement*.
 
-# Schema comparision
+# Schema comparison
 
 This mode serves for running tests on given schemas. Before running this mode, you must have deployed all schemas that you want to work with.
 
